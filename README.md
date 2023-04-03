@@ -19,7 +19,8 @@ This further lowers the chance of overpressure in the system.[^1] The function w
 Node-RED flow will make sure that the vents that get more opened are controlled first so that there is no unnecessary increase of pressure in the system.
 #### Operation of vents is staggered.
 There are no substantial changes to the airflow and no sudden changes to pressure, further increasing the system's stability and lowering the noise.
-
+#### Per room climate control.
+With the aid of the Home Assistant automation, instead of using the target offsets in the HA interface, you can now define a temperature. This will not only chnage the offsets used by the Node-RED flow, but it will also calculate and send to the thermostat a new temperature, that would allow for greater comfort.[^2]
 
 
 
@@ -34,3 +35,4 @@ There are no substantial changes to the airflow and no sudden changes to pressur
 
 
 [^1]: I am not an HVAC professional, nor do I play one on TV.
+[^2]: This is not weighted at this time. There is no control for occupancy either at this time.

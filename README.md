@@ -26,10 +26,10 @@ There are no substantial changes to the airflow and no sudden changes to pressur
 #### Per room climate control.
 With the aid of the Home Assistant automation, instead of using the target offsets in the HA interface, you can now define a temperature. This will not only chnage the offsets used by the Node-RED flow, but it will also calculate and send to the thermostat a new temperature, that would allow for greater comfort.[^2]
 #### Control for backlash.
-The backlash is theissue affecting some larger Keen vents, especially those that are installed on a ceilling, when the vent reverts its position from the defined one to a more open position (or a more closed one, depending on the orientation of the installation) once the actuator stops applying force. This is due to a poor velocity control for maximum open and maximum closed postioins in Keen vents hardware.
+The backlash is the issue affecting some larger Keen vents, especially those that are installed on a ceilling, when the vent reverts its position from the defined one to a more open position (or a more closed one, depending on the orientation of the installation) once the actuator stops applying force. This is due to a poor velocity control for maximum open and maximum closed postioins in Keen vents hardware.
 
 # Disclaimer.
-All opinions are my own and are not material in any way, other than to illustrate my own experementaion with Keen vents, Ecobee thermostat, and the Home Assistant. There are no expressed gurrantees to functionality or fittness for a particular application.
+All opinions are my own and are not material in any way, other than to illustrate my own experementaion with Keen vents, Ecobee thermostat, and the Home Assistant. These opinions cannot be concidered to be endoresements or disapproval or condemnations of any product, service, compny or person.   There are no expressed gurrantees to functionality or fittness for any application.
 
 
 

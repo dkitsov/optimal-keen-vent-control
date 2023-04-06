@@ -29,7 +29,7 @@ With the aid of the Home Assistant automation, instead of using the target offse
 The backlash is the issue affecting some larger Keen vents, especially those that are installed on a ceilling, when the vent reverts its position from the defined one to a more open position (or a more closed one, depending on the orientation of the installation) once the actuator stops applying force. This is due to a poor velocity control for maximum open and maximum closed postioins in Keen vents hardware.
 
 # Disclaimer.
-All opinions are my own and are not material in any way, other than to illustrate my own experementaion with Keen vents, Ecobee thermostat, and the Home Assistant. These opinions cannot be concidered to be endoresements or disapproval or condemnations of any product, service, compny or person.   There are no expressed gurrantees to functionality or fittness for any application.
+All opinions are my own and are not material in any way, other than to illustrate my own experementaion with Keen vents, Ecobee thermostat, and the Home Assistant. These opinions cannot be concidered to be endoresements or disapproval or condemnations of any product, service, company or person.   There are no expressed gurrantees to functionality or fittness for any application.
 
 
 

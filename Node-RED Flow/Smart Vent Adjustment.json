@@ -51,10 +51,12 @@
             "ddc50ea9e9065a33",
             "b445af83922f23b3",
             "c1a654fff29f5e6b",
-            "fd5049e7cb5a34d8"
+            "fd5049e7cb5a34d8",
+            "452c750162405bbf",
+            "2ccfb8fd484e9cfd"
         ],
         "x": 54,
-        "y": 9,
+        "y": 29,
         "w": 882,
         "h": 202,
         "info": "Nodes in this group ar generally to react to the changes to the states of the thermostat and room's temperature offsets and targets."
@@ -98,7 +100,7 @@
         "checkall": "false",
         "repair": false,
         "outputs": 3,
-        "x": 130,
+        "x": 150,
         "y": 290,
         "wires": [
             [
@@ -152,7 +154,7 @@
         "forType": "num",
         "forUnits": "minutes",
         "x": 390,
-        "y": 110,
+        "y": 130,
         "wires": [
             [
                 "5e89fdddb83e219b"
@@ -180,8 +182,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 475,
-        "y": 170,
+        "x": 625,
+        "y": 190,
         "wires": [
             [
                 "ddc50ea9e9065a33"
@@ -240,13 +242,13 @@
         "state_type": "str",
         "enableInput": true,
         "x": 160,
-        "y": 160,
+        "y": 180,
         "wires": [
             [
                 "85f3c3b5.fdf968"
             ],
             [
-                "1874d4b0.289beb"
+                "2ccfb8fd484e9cfd"
             ]
         ],
         "outputLabels": [
@@ -478,6 +480,9 @@
                 "6db3306a262600e9"
             ]
         ],
+        "inputLabels": [
+            "Bath Humidity Control"
+        ],
         "outputLabels": [
             "Open",
             "Balanced"
@@ -536,7 +541,7 @@
         "blockInputOverrides": false,
         "outputProperties": [],
         "x": 570,
-        "y": 110,
+        "y": 130,
         "wires": [
             [
                 "ddc50ea9e9065a33"
@@ -549,10 +554,10 @@
         "type": "function",
         "z": "5e644e04.a23e78",
         "name": "Heat/Cool Vents Position",
-        "func": "const DEADBAND = 6;\nconst MIN_POSITION = 0;\nconst MAX_POSITION = 99;\nconst MEAN_POSITION = 60;\nconst globalHomeAssistant = global.get('homeassistant');\nvar success = true;\n\ntry {\n    var settings_name = msg.payload.settings;\n    var settings = flow.get(settings_name);\n    if (settings.vstw === undefined) {\n        node.warn(\"no settings available for \" + settings_name);\n        success = false;\n    }\n} catch (e) {\n    node.warn(\"error with parameters, aborting\");\n    success = false;\n}\n\nconst action = msg.payload.action;\nif (!action || (action !== \"heat\" && action !== \"cool\")) {\n    node.warn(\"Invalid or missing action payload. Please provide either 'heat' or 'cool, or check the flow connections'.\");\n    success = false;\n}\n\nif (success) {\n    node.warn(\"Using \" + settings_name + \" for \" + action);\n    const updatedSettings = settings.vstw.map(vstw => {\n\n        const current_temp = parseFloat(globalHomeAssistant.homeAssistant.states[vstw.sensor].state);\n        const target_temp = parseFloat(globalHomeAssistant.homeAssistant.states[vstw.target].state);\n\n        // Check if the vent is a group, and extract individual vent entities if needed\n        const vent_entities = [];\n        if (globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id) {\n            vent_entities.push(...globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id);\n        } else {\n            vent_entities.push(vstw.vent);\n        }\n\n        return { ...vstw, sensor: current_temp, target: target_temp, vents: vent_entities, room_min_position: vstw.min_position };\n\n    });\n    const sortedSettings = action === 'cool'\n        ? updatedSettings.sort((a, b) => (b.sensor - b.target) - (a.sensor - a.target))\n        : updatedSettings.sort((a, b) => (b.target - b.sensor) - (a.target - a.sensor));\n\n    const newPositions = sortedSettings.map((room, index, array) => {\n        const positionRange = MAX_POSITION - MIN_POSITION;\n        const rangeStep = positionRange / (array.length - 2);\n        let newPosition = Math.round(MAX_POSITION - (index - 1) * rangeStep);\n\n        // Apply room_min_position constraint\n        newPosition = Math.max(newPosition, room.room_min_position || MIN_POSITION);\n\n        if (index === 0) {\n            newPosition = MAX_POSITION;\n        } else if (index === array.length - 1) {\n            newPosition = room.room_min_position || MIN_POSITION;\n        }\n\n        return {\n            vent: room.vent,\n            position: newPosition\n        };\n    });\n\n    const totalWeight = updatedSettings.reduce((sum, room) => sum + room.weight, 0);\n    const weightedMeanPosition = newPositions.reduce((sum, room, index) => sum + room.position * updatedSettings[index].weight, 0) / totalWeight;\n\n    if (weightedMeanPosition < MEAN_POSITION) {\n        const adjustment = Math.round(MEAN_POSITION - weightedMeanPosition);\n        newPositions.forEach((room, index) => {\n            if (index > 0 && index < newPositions.length - 1) {\n                room.position += adjustment;\n                room.position = Math.min(MAX_POSITION, room.position);\n            }\n        });\n    }\n\n    const messages = [];\n\n    updatedSettings.forEach((room, index) => {\n        const newPosition = newPositions[index];\n\n        room.vents.forEach(vent => {\n            const ventEntity = globalHomeAssistant.homeAssistant.states[vent];\n            if (!ventEntity) {\n                node.warn(`Vent entity '${vent}' not found in Home Assistant states.`);\n                return;\n            }\n\n            // Extract the current position from the current_position attribute\n            const currentPosition = parseFloat(ventEntity.attributes[\"current_position\"]);\n            const friendlyName = ventEntity.attributes[\"friendly_name\"];\n            const delta = Math.abs(newPosition.position - currentPosition);\n\n            node.warn(`Working with vent — ${friendlyName}: newPosition: ${newPosition.position}, currentPosition: ${currentPosition}.`);\n\n            if (delta >= DEADBAND) {\n                node.status({ fill: \"green\", shape: \"dot\", text: \"Changing cover positions. New average mean is \" + Math.round(weightedMeanPosition) });\n                const new_msg = { payload: msg.payload, topic: msg.topic };\n                new_msg.payload = { \"vent_name\": vent, \"data\": { \"entity_id\": vent, \"position\": newPosition.position } };\n                messages.push(new_msg);\n            } else {\n                node.status({ fill: \"blue\", shape: \"ring\", text: \"Already at a position. Average mean is \" + Math.round(weightedMeanPosition) });\n            }\n        });\n    });\n    // const sortedMessages = messages.sort((a, b) => {\n    //     const diffA = a.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[a.payload.vent_name].attributes[\"current_position\"]);\n    //     const diffB = b.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[b.payload.vent_name].attributes[\"current_position\"]);\n\n    //     if (diffA >= 0 && diffB >= 0) {\n    //         return diffB - diffA;\n    //     } else if (diffA < 0 && diffB < 0) {\n    //         return diffA - diffB;\n    //     } else if (diffA >= 0 && diffB < 0) {\n    //         return -1;\n    //     } else {\n    //         return 1;\n    //     }\n    // });\n    const sortedMessages = messages.sort((a, b) => {\n        const diffA = a.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[a.payload.vent_name].attributes[\"current_position\"]);\n        const diffB = b.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[b.payload.vent_name].attributes[\"current_position\"]);\n\n        if (diffA >= 0 && diffB >= 0) {\n            return diffB - diffA;\n        } else if (diffA < 0 && diffB < 0) {\n            return Math.abs(diffA) - Math.abs(diffB);\n        } else {\n            return diffB - diffA;\n        }\n    });\n\n    node.warn( sortedMessages );\n    if (sortedMessages.length > 0) {\n        const formattedMessage = sortedMessages.map((msg) => {\n            const positionChange = msg.payload.data.position - parseFloat(\n                globalHomeAssistant.homeAssistant.states[msg.payload.vent_name].attributes[\"current_position\"]\n            );\n            const changeSymbol = positionChange >= 0 ? \"+\" : \"\";\n            return `${msg.payload.vent_name}: ${changeSymbol}${positionChange.toFixed(0)}`;\n        }).join(\", \");\n\n        node.warn(\"Vents adjustment order: \");\n        node.warn(formattedMessage);\n    } else {\n        node.warn(\"Same vent priority as before.\");\n    }\n\n    return [sortedMessages];\n}",
+        "func": "if (msg.payload.action === 'idle' && msg.payload.settings === 'idle') {\n    node.status({ fill: 'grey', shape: 'ring', text: 'Idle' });\n} else if (msg.payload.action !== 'idle' && msg.payload.settings !== 'idle') {\nconst DEADBAND = 6;\nconst MIN_POSITION = 0;\nconst MAX_POSITION = 99;\nconst MEAN_POSITION = 60;\nconst globalHomeAssistant = global.get('homeassistant');\nvar success = true;\n\ntry {\n    var settings_name = msg.payload.settings;\n    var settings = flow.get(settings_name);\n    if (settings.vstw === undefined) {\n        node.warn(\"no settings available for \" + settings_name);\n        success = false;\n    }\n} catch (e) {\n    node.warn(\"error with parameters, aborting\");\n    success = false;\n}\n\nconst action = msg.payload.action;\nif (!action || (action !== \"heat\" && action !== \"cool\")) {\n    node.warn(\"Invalid or missing action payload. Please provide either 'heat' or 'cool, or check the flow connections'.\");\n    success = false;\n}\n\nif (success) {\n    node.warn(\"Using \" + settings_name + \" for \" + action);\n    const updatedSettings = settings.vstw.map(vstw => {\n\n        const current_temp = parseFloat(globalHomeAssistant.homeAssistant.states[vstw.sensor].state);\n        const target_temp = parseFloat(globalHomeAssistant.homeAssistant.states[vstw.target].state);\n\n        // Check if the vent is a group, and extract individual vent entities if needed\n        const vent_entities = [];\n        if (globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id) {\n            vent_entities.push(...globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id);\n        } else {\n            vent_entities.push(vstw.vent);\n        }\n\n        return { ...vstw, sensor: current_temp, target: target_temp, vents: vent_entities, room_min_position: vstw.min_position };\n\n    });\n    const sortedSettings = action === 'cool'\n        ? updatedSettings.sort((a, b) => (b.sensor - b.target) - (a.sensor - a.target))\n        : updatedSettings.sort((a, b) => (b.target - b.sensor) - (a.target - a.sensor));\n\n    const newPositions = sortedSettings.map((room, index, array) => {\n        const positionRange = MAX_POSITION - MIN_POSITION;\n        const rangeStep = positionRange / (array.length - 2);\n        let newPosition = Math.round(MAX_POSITION - (index - 1) * rangeStep);\n\n        // Apply room_min_position constraint\n        newPosition = Math.max(newPosition, room.room_min_position || MIN_POSITION);\n\n        if (index === 0) {\n            newPosition = MAX_POSITION;\n        } else if (index === array.length - 1) {\n            newPosition = room.room_min_position || MIN_POSITION;\n        }\n\n        return {\n            vent: room.vent,\n            position: newPosition\n        };\n    });\n\n    const totalWeight = updatedSettings.reduce((sum, room) => sum + room.weight, 0);\n    const weightedMeanPosition = newPositions.reduce((sum, room, index) => sum + room.position * updatedSettings[index].weight, 0) / totalWeight;\n\n    if (weightedMeanPosition < MEAN_POSITION) {\n        const adjustment = Math.round(MEAN_POSITION - weightedMeanPosition);\n        newPositions.forEach((room, index) => {\n            if (index > 0 && index < newPositions.length - 1) {\n                room.position += adjustment;\n                room.position = Math.min(MAX_POSITION, room.position);\n            }\n        });\n    }\n\n    const messages = [];\n\n    updatedSettings.forEach((room, index) => {\n        const newPosition = newPositions[index];\n\n        room.vents.forEach(vent => {\n            const ventEntity = globalHomeAssistant.homeAssistant.states[vent];\n            if (!ventEntity) {\n                node.warn(`Vent entity '${vent}' not found in Home Assistant states.`);\n                return;\n            }\n\n            // Extract the current position from the current_position attribute\n            const currentPosition = parseFloat(ventEntity.attributes[\"current_position\"]);\n            const friendlyName = ventEntity.attributes[\"friendly_name\"];\n            const delta = Math.abs(newPosition.position - currentPosition);\n\n            node.warn(`Working with vent — ${friendlyName}: newPosition: ${newPosition.position}, currentPosition: ${currentPosition}.`);\n\n            if (delta >= DEADBAND) {\n                node.status({ fill: \"green\", shape: \"dot\", text: \"Changing cover positions. New average mean is \" + Math.round(weightedMeanPosition) });\n                const new_msg = { payload: msg.payload, topic: msg.topic };\n                new_msg.payload = { \"vent_name\": vent, \"data\": { \"entity_id\": vent, \"position\": newPosition.position } };\n                messages.push(new_msg);\n            } else {\n                node.status({ fill: \"blue\", shape: \"ring\", text: \"Already at a position. Average mean is \" + Math.round(weightedMeanPosition) });\n            }\n        });\n    });\n    // const sortedMessages = messages.sort((a, b) => {\n    //     const diffA = a.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[a.payload.vent_name].attributes[\"current_position\"]);\n    //     const diffB = b.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[b.payload.vent_name].attributes[\"current_position\"]);\n\n    //     if (diffA >= 0 && diffB >= 0) {\n    //         return diffB - diffA;\n    //     } else if (diffA < 0 && diffB < 0) {\n    //         return diffA - diffB;\n    //     } else if (diffA >= 0 && diffB < 0) {\n    //         return -1;\n    //     } else {\n    //         return 1;\n    //     }\n    // });\n    const sortedMessages = messages.sort((a, b) => {\n        const diffA = a.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[a.payload.vent_name].attributes[\"current_position\"]);\n        const diffB = b.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[b.payload.vent_name].attributes[\"current_position\"]);\n\n        if (diffA >= 0 && diffB >= 0) {\n            return diffB - diffA;\n        } else if (diffA < 0 && diffB < 0) {\n            return Math.abs(diffA) - Math.abs(diffB);\n        } else {\n            return diffB - diffA;\n        }\n    });\n\n    node.warn( sortedMessages );\n    if (sortedMessages.length > 0) {\n        const formattedMessage = sortedMessages.map((msg) => {\n            const positionChange = msg.payload.data.position - parseFloat(\n                globalHomeAssistant.homeAssistant.states[msg.payload.vent_name].attributes[\"current_position\"]\n            );\n            const changeSymbol = positionChange >= 0 ? \"+\" : \"\";\n            return `${msg.payload.vent_name}: ${changeSymbol}${positionChange.toFixed(0)}`;\n        }).join(\", \");\n\n        node.warn(\"Vents adjustment order: \");\n        node.warn(formattedMessage);\n    } else {\n        node.warn(\"Same vent priority as before.\");\n    }\n\n    return [sortedMessages];\n}}",
         "outputs": 1,
         "noerr": 0,
-        "initialize": "// Code added here will be run once\n// whenever the node is started.\nnode.status({fill:\"grey\",shape:\"ring\",text:\"Idle\"});",
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\nnode.status({fill:\"grey\",shape:\"ring\",text:\"Flow is starting\"});",
         "finalize": "",
         "libs": [],
         "x": 230,
@@ -583,7 +588,7 @@
         "topic": "topic",
         "outputs": 1,
         "x": 760,
-        "y": 170,
+        "y": 190,
         "wires": [
             [
                 "b445af83922f23b3"
@@ -692,7 +697,7 @@
         "name": "Heat/Cool in",
         "links": [
             "6d73d20c4918ca28",
-            "b445af83922f23b3"
+            "e7554556816426c7"
         ],
         "x": 85,
         "y": 550,
@@ -710,13 +715,11 @@
         "name": "From Climate Control trigger",
         "mode": "link",
         "links": [
-            "14bc533c3c0e0dbd",
-            "9b39cdcc1a9a9baf",
             "b03b02a39a160d2d",
-            "ddf1c8663e4de644"
+            "ea24bab0a4700136"
         ],
         "x": 895,
-        "y": 170,
+        "y": 190,
         "wires": []
     },
     {
@@ -806,7 +809,7 @@
             }
         ],
         "x": 170,
-        "y": 50,
+        "y": 70,
         "wires": [
             [
                 "fd5049e7cb5a34d8"
@@ -833,7 +836,7 @@
         "allowrate": false,
         "outputs": 1,
         "x": 285,
-        "y": 50,
+        "y": 70,
         "wires": [
             [
                 "85f3c3b5.fdf968"
@@ -847,10 +850,10 @@
         "type": "function",
         "z": "5e644e04.a23e78",
         "name": "Fan Balance Position",
-        "func": "const DEADBAND = 8;\nconst MIN_POSITION = 15;\nconst MAX_POSITION = 99;\nconst globalHomeAssistant = global.get('homeassistant');\nvar success = true;\n\ntry {\n    var settings_name = msg.payload.settings;\n    var settings = flow.get(settings_name);\n    if (settings.vstw === undefined) {\n        node.warn(\"no settings available for \" + settings_name);\n        success = false;\n    }\n} catch (e) {\n    node.warn(\"error with parameters, aborting\");\n    success = false;\n}\n\nconst action = msg.payload.action;\nif (!action || (action !== \"fan\")) {\n    node.warn(\"Invalid or missing action payload. Please provide either 'heat' or 'cool, or check the flow connections'.\");\n    success = false;\n}\nif (success) {\n    node.warn(\"Using \" + settings_name + \" for \" + action);\n    const updatedSettings = settings.vstw.map(vstw => {\n        const current_temp = parseFloat(globalHomeAssistant.homeAssistant.states[vstw.sensor].state);\n\n        const vent_entities = [];\n        if (globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id) {\n            vent_entities.push(...globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id);\n        } else {\n            vent_entities.push(vstw.vent);\n        }\n\n        return { ...vstw, sensor: current_temp, vents: vent_entities, room_min_position: vstw.min_position };\n    });\n\n    const avgHouseTemp = updatedSettings.reduce((sum, room) => sum + room.sensor, 0) / updatedSettings.length;\n\n    const sortedSettings = updatedSettings.sort((a, b) => Math.abs(b.sensor - avgHouseTemp) - Math.abs(a.sensor - avgHouseTemp));\n\n    const newPositions = sortedSettings.map((room, index, array) => {\n        const positionRange = MAX_POSITION - MIN_POSITION;\n        const rangeStep = positionRange / (sortedSettings.length - 1);\n        let newPosition;\n\n        if (index === 0 || index === array.length - 1) {\n            newPosition = MAX_POSITION;\n        } else {\n            newPosition = Math.round(MAX_POSITION - (index - 1) * rangeStep);\n            newPosition = Math.max(newPosition, room.room_min_position || MIN_POSITION);\n            newPosition = Math.min(newPosition, MAX_POSITION);\n        }\n\n        return {\n            vent: room.vent,\n            position: newPosition\n        };\n    });\n\n    // Set the room closest to the average house temperature to MIN position\n    const closestToAvgTempIndex = updatedSettings.findIndex(room => Math.abs(room.sensor - avgHouseTemp) === Math.min(...updatedSettings.map(room => Math.abs(room.sensor - avgHouseTemp))));\n    newPositions[closestToAvgTempIndex].position = MIN_POSITION;\n\n    const messages = [];\n\n    updatedSettings.forEach((room, index) => {\n        const newPosition = newPositions[index];\n\n        room.vents.forEach(vent => {\n            const ventEntity = globalHomeAssistant.homeAssistant.states[vent];\n            if (!ventEntity) {\n                node.warn(`Vent entity '${vent}' not found in Home Assistant states.`);\n                return;\n            }\n\n            const currentPosition = parseFloat(ventEntity.attributes[\"current_position\"]);\n            const friendlyName = ventEntity.attributes[\"friendly_name\"];\n            const delta = Math.abs(newPosition.position - currentPosition);\n\n            node.warn(`Working with vent — ${friendlyName}: newPosition: ${newPosition.position}, currentPosition: ${currentPosition}.`);\n\n            if (delta >= DEADBAND) {\n                node.status({ fill: \"green\", shape: \"dot\", text: \"Changing cover positions. Average house temperature is \" + avgHouseTemp.toFixed(1) + \"°C\" });\n                const new_msg = { payload: msg.payload, topic: msg.topic };\n                new_msg.payload = { \"vent_name\": vent, \"data\": { \"entity_id\": vent, \"position\": newPosition.position } };\n                messages.push(new_msg);\n            } else {\n                node.status({ fill: \"blue\", shape: \"ring\", text: \"Already at a position. Average house temperature is \" + avgHouseTemp.toFixed(1) + \"°C\" });\n            }\n        });\n    });\n\n    return [messages];\n}",
+        "func": "if (msg.payload.action === 'idle' && msg.payload.settings === 'idle') {\n    node.status({ fill: 'grey', shape: 'ring', text: 'Idle' });\n} else if (msg.payload.action !== 'idle' && msg.payload.settings !== 'idle') \n{\nconst DEADBAND = 8;\nconst MIN_POSITION = 15;\nconst MAX_POSITION = 99;\nconst globalHomeAssistant = global.get('homeassistant');\nvar success = true;\n\ntry {\n    var settings_name = msg.payload.settings;\n    var settings = flow.get(settings_name);\n    if (settings.vstw === undefined) {\n        node.warn(\"no settings available for \" + settings_name);\n        success = false;\n    }\n} catch (e) {\n    node.warn(\"error with parameters, aborting\");\n    success = false;\n}\n\nconst action = msg.payload.action;\nif (!action || (action !== \"fan\")) {\n    node.warn(\"Invalid or missing action payload. Please provide either 'heat' or 'cool, or check the flow connections'.\");\n    success = false;\n}\nif (success) {\n    node.warn(\"Using \" + settings_name + \" for \" + action);\n    const updatedSettings = settings.vstw.map(vstw => {\n        const current_temp = parseFloat(globalHomeAssistant.homeAssistant.states[vstw.sensor].state);\n\n        const vent_entities = [];\n        if (globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id) {\n            vent_entities.push(...globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id);\n        } else {\n            vent_entities.push(vstw.vent);\n        }\n\n        return { ...vstw, sensor: current_temp, vents: vent_entities, room_min_position: vstw.min_position };\n    });\n\n    const avgHouseTemp = updatedSettings.reduce((sum, room) => sum + room.sensor, 0) / updatedSettings.length;\n\n    const sortedSettings = updatedSettings.sort((a, b) => Math.abs(b.sensor - avgHouseTemp) - Math.abs(a.sensor - avgHouseTemp));\n\n    const newPositions = sortedSettings.map((room, index, array) => {\n        const positionRange = MAX_POSITION - MIN_POSITION;\n        const rangeStep = positionRange / (sortedSettings.length - 1);\n        let newPosition;\n\n        if (index === 0 || index === array.length - 1) {\n            newPosition = MAX_POSITION;\n        } else {\n            newPosition = Math.round(MAX_POSITION - (index - 1) * rangeStep);\n            newPosition = Math.max(newPosition, room.room_min_position || MIN_POSITION);\n            newPosition = Math.min(newPosition, MAX_POSITION);\n        }\n\n        return {\n            vent: room.vent,\n            position: newPosition\n        };\n    });\n\n    // Set the room closest to the average house temperature to MIN position\n    const closestToAvgTempIndex = updatedSettings.findIndex(room => Math.abs(room.sensor - avgHouseTemp) === Math.min(...updatedSettings.map(room => Math.abs(room.sensor - avgHouseTemp))));\n    newPositions[closestToAvgTempIndex].position = MIN_POSITION;\n\n    const messages = [];\n\n    updatedSettings.forEach((room, index) => {\n        const newPosition = newPositions[index];\n\n        room.vents.forEach(vent => {\n            const ventEntity = globalHomeAssistant.homeAssistant.states[vent];\n            if (!ventEntity) {\n                node.warn(`Vent entity '${vent}' not found in Home Assistant states.`);\n                return;\n            }\n\n            const currentPosition = parseFloat(ventEntity.attributes[\"current_position\"]);\n            const friendlyName = ventEntity.attributes[\"friendly_name\"];\n            const delta = Math.abs(newPosition.position - currentPosition);\n\n            node.warn(`Working with vent — ${friendlyName}: newPosition: ${newPosition.position}, currentPosition: ${currentPosition}.`);\n\n            if (delta >= DEADBAND) {\n                node.status({ fill: \"green\", shape: \"dot\", text: \"Changing cover positions. Average house temperature is \" + avgHouseTemp.toFixed(1) + \"°C\" });\n                const new_msg = { payload: msg.payload, topic: msg.topic };\n                new_msg.payload = { \"vent_name\": vent, \"data\": { \"entity_id\": vent, \"position\": newPosition.position } };\n                messages.push(new_msg);\n            } else {\n                node.status({ fill: \"blue\", shape: \"ring\", text: \"Already at a position. Average house temperature is \" + avgHouseTemp.toFixed(1) + \"°C\" });\n            }\n        });\n    });\n\n    return [messages];\n}\n}",
         "outputs": 1,
         "noerr": 0,
-        "initialize": "// Code added here will be run once\n// whenever the node is started.\nnode.status({ fill: \"grey\", shape: \"ring\", text: \"Idle\" });",
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\nnode.status({ fill: \"grey\", shape: \"ring\", text: \"Flow is starting\" });",
         "finalize": "",
         "libs": [],
         "x": 220,
@@ -872,7 +875,7 @@
             "9b39cdcc1a9a9baf"
         ],
         "x": 935,
-        "y": 430,
+        "y": 420,
         "wires": []
     },
     {
@@ -882,7 +885,7 @@
         "name": "To Vent Control Balanced",
         "links": [
             "059594e2ab4990c2",
-            "b445af83922f23b3"
+            "e7554556816426c7"
         ],
         "x": 85,
         "y": 600,
@@ -897,10 +900,10 @@
         "type": "function",
         "z": "5e644e04.a23e78",
         "name": "Fan Open Position",
-        "func": "const DEADBAND = 8;\nconst MAX_POSITION = 99;\nconst globalHomeAssistant = global.get('homeassistant');\nvar success = true;\n\ntry {\n    var settings_name = msg.payload.settings;\n    var settings = flow.get(settings_name);\n    if (settings.vstw === undefined) {\n        node.warn(\"no settings available for \" + settings_name);\n        success = false;\n    }\n} catch (e) {\n    node.warn(\"error with parameters, aborting\");\n    success = false;\n}\nconst action = msg.payload.action;\nif (!action || (action !== \"fan\")) {\n    node.warn(\"Invalid or missing action payload. Please provide either 'heat' or 'cool, or check the flow connections'.\");\n    success = false;\n}\n\nif (success) {\n    node.warn(\"Using \" + settings_name + \" for \" + action);\n    const updatedSettings = settings.vstw.map(vstw => {\n        const vent_entities = [];\n        if (globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id) {\n            vent_entities.push(...globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id);\n        } else {\n            vent_entities.push(vstw.vent);\n        }\n\n        return { ...vstw, vents: vent_entities };\n    });\n\n    const messages = [];\n\n    updatedSettings.forEach(room => {\n        room.vents.forEach(vent => {\n            const ventEntity = globalHomeAssistant.homeAssistant.states[vent];\n            if (!ventEntity) {\n                node.warn(`Vent entity '${vent}' not found in Home Assistant states.`);\n                return;\n            }\n\n            const currentPosition = parseFloat(ventEntity.attributes[\"current_position\"]);\n            const friendlyName = ventEntity.attributes[\"friendly_name\"];\n            const delta = Math.abs(MAX_POSITION - currentPosition);\n\n            node.warn(`Working with vent — ${friendlyName}: newPosition: ${MAX_POSITION}, currentPosition: ${currentPosition}.`);\n\n            if (delta >= DEADBAND) {\n                node.status({ fill: \"green\", shape: \"dot\", text: \"Setting vent to max position\" });\n                const new_msg = { payload: msg.payload, topic: msg.topic };\n                new_msg.payload = { \"vent_name\": vent, \"data\": { \"entity_id\": vent, \"position\": MAX_POSITION } };\n                messages.push(new_msg);\n            } else {\n                node.status({ fill: \"blue\", shape: \"ring\", text: \"Already near max position\" });\n            }\n        });\n    });\n\n    return [messages];\n}",
+        "func": "if (msg.payload.action === 'idle' && msg.payload.settings === 'idle') {\n    node.status({ fill: 'grey', shape: 'ring', text: 'Idle' });\n} else if (msg.payload.action !== 'idle' && msg.payload.settings !== 'idle') {\nconst DEADBAND = 8;\nconst MAX_POSITION = 99;\nconst globalHomeAssistant = global.get('homeassistant');\nvar success = true;\n\ntry {\n    var settings_name = msg.payload.settings;\n    var settings = flow.get(settings_name);\n    if (settings.vstw === undefined) {\n        node.warn(\"no settings available for \" + settings_name);\n        success = false;\n    }\n} catch (e) {\n    node.warn(\"error with parameters, aborting\");\n    success = false;\n}\nconst action = msg.payload.action;\nif (!action || (action !== \"fan\")) {\n    node.warn(\"Invalid or missing action payload. Please provide either 'heat' or 'cool, or check the flow connections'.\");\n    success = false;\n}\n\nif (success) {\n    node.warn(\"Using \" + settings_name + \" for \" + action);\n    const updatedSettings = settings.vstw.map(vstw => {\n        const vent_entities = [];\n        if (globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id) {\n            vent_entities.push(...globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id);\n        } else {\n            vent_entities.push(vstw.vent);\n        }\n\n        return { ...vstw, vents: vent_entities };\n    });\n\n    const messages = [];\n\n    updatedSettings.forEach(room => {\n        room.vents.forEach(vent => {\n            const ventEntity = globalHomeAssistant.homeAssistant.states[vent];\n            if (!ventEntity) {\n                node.warn(`Vent entity '${vent}' not found in Home Assistant states.`);\n                return;\n            }\n\n            const currentPosition = parseFloat(ventEntity.attributes[\"current_position\"]);\n            const friendlyName = ventEntity.attributes[\"friendly_name\"];\n            const delta = Math.abs(MAX_POSITION - currentPosition);\n\n            node.warn(`Working with vent — ${friendlyName}: newPosition: ${MAX_POSITION}, currentPosition: ${currentPosition}.`);\n\n            if (delta >= DEADBAND) {\n                node.status({ fill: \"green\", shape: \"dot\", text: \"Setting vent to max position\" });\n                const new_msg = { payload: msg.payload, topic: msg.topic };\n                new_msg.payload = { \"vent_name\": vent, \"data\": { \"entity_id\": vent, \"position\": MAX_POSITION } };\n                messages.push(new_msg);\n            } else {\n                node.status({ fill: \"blue\", shape: \"ring\", text: \"Already near max position\" });\n            }\n        });\n    });\n\n    return [messages];\n}}",
         "outputs": 1,
         "noerr": 0,
-        "initialize": "// Code added here will be run once\n// whenever the node is started.\nnode.status({ fill: \"grey\", shape: \"ring\", text: \"Idle\" });",
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\nnode.status({ fill: \"grey\", shape: \"ring\", text: \"Flow is starting\" });",
         "finalize": "",
         "libs": [],
         "x": 210,
@@ -916,7 +919,7 @@
         "id": "361f43a26b1b8bb0",
         "type": "switch",
         "z": "5e644e04.a23e78",
-        "name": "Bath Vent Check",
+        "name": "Bath Humidity",
         "property": "ventilate_bath",
         "propertyType": "global",
         "rules": [
@@ -930,7 +933,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 350,
+        "x": 340,
         "y": 370,
         "wires": [
             [
@@ -1004,7 +1007,7 @@
             "ddf1c8663e4de644"
         ],
         "x": 935,
-        "y": 370,
+        "y": 380,
         "wires": []
     },
     {
@@ -1014,7 +1017,7 @@
         "name": "To Vent control Open",
         "links": [
             "f2538e82dbd1a6e3",
-            "b445af83922f23b3"
+            "e7554556816426c7"
         ],
         "x": 85,
         "y": 650,
@@ -1120,7 +1123,7 @@
         "encoding": "none",
         "allProps": false,
         "x": 480,
-        "y": 790,
+        "y": 800,
         "wires": [
             [
                 "e2f00950bb902177"
@@ -1173,6 +1176,99 @@
         ],
         "icon": "font-awesome/fa-fire",
         "info": "### Purpose:\nThis node is used to inject the heating settings into the flow. In this context, for night time heating.\n### Dependencies:\nThis node cannot operate without the settings present as a flow variable, set by the nodes in the Settings assignments group. The heat_night.json is the source of the setting\n### Need:\nThis node is needed to if you need the vents controlled when the HVAC is heating."
+    },
+    {
+        "id": "885d16a526345eed",
+        "type": "change",
+        "z": "5e644e04.a23e78",
+        "name": "Idle",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\"action\":\"idle\",\"settings\":\"idle\"}",
+                "tot": "json"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 760,
+        "y": 460,
+        "wires": [
+            [
+                "e7554556816426c7"
+            ]
+        ],
+        "icon": "node-red-contrib-home-assistant-websocket/ha-entity-switch.svg",
+        "info": "### Purpose:\nThis node injects the Idle action and settings into the flow ahead of other actions.\nThis allows the function nodes to check if the system is idle or if a part of the flow is idle and display the idle message.\nAllows to see which function node is active in the node tree without referring to the debug panel.\n### Dependencies:\nThis node cannot operate without either the trigger node sending messages, or the Ecobee Trigger node sending a message to its idle output\n### Need:\nThis node is optional and is not critical to operation of the flow"
+    },
+    {
+        "id": "ea24bab0a4700136",
+        "type": "link in",
+        "z": "5e644e04.a23e78",
+        "name": "In IDLE",
+        "links": [
+            "b445af83922f23b3",
+            "2ccfb8fd484e9cfd"
+        ],
+        "x": 655,
+        "y": 460,
+        "wires": [
+            [
+                "885d16a526345eed"
+            ]
+        ]
+    },
+    {
+        "id": "e7554556816426c7",
+        "type": "link out",
+        "z": "5e644e04.a23e78",
+        "name": "link out 7",
+        "mode": "link",
+        "links": [
+            "14bc533c3c0e0dbd",
+            "9b39cdcc1a9a9baf",
+            "ddf1c8663e4de644"
+        ],
+        "x": 935,
+        "y": 470,
+        "wires": []
+    },
+    {
+        "id": "2ccfb8fd484e9cfd",
+        "type": "link out",
+        "z": "5e644e04.a23e78",
+        "g": "f7af37c4f119539f",
+        "name": "link out Stop",
+        "mode": "link",
+        "links": [
+            "452c750162405bbf",
+            "ea24bab0a4700136"
+        ],
+        "x": 285,
+        "y": 190,
+        "wires": []
+    },
+    {
+        "id": "452c750162405bbf",
+        "type": "link in",
+        "z": "5e644e04.a23e78",
+        "g": "f7af37c4f119539f",
+        "name": "link in Stop",
+        "links": [
+            "2ccfb8fd484e9cfd"
+        ],
+        "x": 565,
+        "y": 190,
+        "wires": [
+            [
+                "1874d4b0.289beb"
+            ]
+        ]
     },
     {
         "id": "9f0ef25a.b0945",

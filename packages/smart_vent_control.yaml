@@ -1,0 +1,443 @@
+#
+# HomeAssistant Smart Vent Integration
+#
+
+#
+# Sensors
+#
+sensor:
+  - platform: template
+    sensors:
+      # sensors for Ecobee heat/cool and fan
+      ecobee_main_hvac_status:
+        friendly_name: "Ecobee Main HVAC Status"
+        unique_id: "ecobee_main_hvac_status"
+        value_template: >
+          {% if is_state_attr('climate.corridor_homekit', 'hvac_action', 'heating') %}
+            heating
+          {% elif is_state_attr('climate.corridor_homekit', 'hvac_action', 'cooling') %}
+            cooling
+          {% elif is_state_attr('climate.corridor_homekit', 'fan_mode', 'on') %}
+            fan
+          {% else %}
+            idle
+          {% endif %}
+      ecobee_corridor_homekit_set_temperature:
+        friendly_name: Currently set Ecobee (Homekit) temperature
+        unique_id: "ecobee_corridor_homekit_set_temperature"
+        value_template: '{{ state_attr("climate.corridor_homekit", "temperature")| float}}'
+      ######################################
+      #Vent position sensors for graphs' use
+      keen_vent_position_office:
+        friendly_name: "Office Keen Vent Position"
+        unit_of_measurement: "%"
+        device_class: power_factor
+        value_template: >
+          {{ state_attr("cover.keen_vent_office", "current_position")| float }}
+          
+      keen_vent_position_primary_bedroom:
+        friendly_name: "Primary Bedroom Keen Vent Position"
+        unit_of_measurement: "%"
+        device_class: power_factor
+        value_template: >
+          {{ state_attr("cover.keen_vent_primary_bedroom", "current_position")| float }}
+          
+      keen_vent_position_primary_bathroom:
+        friendly_name: "Primary Bathroom Keen Vent Position"
+        unit_of_measurement: "%"
+        device_class: power_factor
+        value_template: >
+          {{ state_attr("cover.keen_vent_primary_bathroom", "current_position")| float }}
+          
+      keen_vent_position_dining_room:
+        friendly_name: "Dining Room Keen Vent Position"
+        unit_of_measurement: "%"
+        device_class: power_factor
+        value_template: >
+          {{ state_attr("cover.keen_vent_dining_room", "current_position")| float }}
+          
+      keen_vent_position_living_room:
+        friendly_name: "Living Room Keen Vent Position"
+        unit_of_measurement: "%"
+        device_class: power_factor
+        value_template: >
+          {{ state_attr("cover.keen_vent_living_room", "current_position")| float }}
+          
+      keen_vent_position_hallway_bathroom:
+        friendly_name: "Hallway Bathroom Keen Vent Position"
+        unit_of_measurement: "%"
+        device_class: power_factor
+        value_template: >
+          {{ state_attr("cover.keen_vent_hallway_bathroom", "current_position")| float }}
+          
+  #
+  - platform: min_max
+    name: Keen mean position
+    type: mean
+    entity_ids:
+      - sensor.keen_vent_position_hallway_bathroom
+      - sensor.keen_vent_position_hallway_bathroom
+      - sensor.keen_vent_position_living_room
+      - sensor.keen_vent_position_living_room
+      - sensor.keen_vent_position_living_room
+      - sensor.keen_vent_position_living_room
+      - sensor.keen_vent_position_dining_room
+      - sensor.keen_vent_position_dining_room
+      - sensor.keen_vent_position_dining_room
+      - sensor.keen_vent_position_dining_room
+      - sensor.keen_vent_position_primary_bathroom
+      - sensor.keen_vent_position_primary_bathroom
+      - sensor.keen_vent_position_primary_bedroom
+      - sensor.keen_vent_position_primary_bedroom
+      - sensor.keen_vent_position_primary_bedroom
+      - sensor.keen_vent_position_office
+      - sensor.keen_vent_position_office
+      - sensor.keen_vent_position_office
+  - platform: temperature_feels_like
+    name: "House Feels Like Temperature"
+    source:
+      - sensor.average_house_humidity
+      - sensor.average_house_temperature
+  # Sensor customizations
+homeassistant:
+  customize:
+    cover.keen_vent_dining_room:
+      device_class: damper
+    cover.keen_vent_hallway_bathroom:
+      device_class: damper
+    cover.keen_vent_living_room:
+      device_class: damper
+    cover.keen_vent_primary_bathroom:
+      device_class: damper
+    cover.keen_vent_primary_bedroom:
+      device_class: damper
+    cover.keen_vent_office:
+      device_class: damper
+    sensor.keen_vent_position_office:
+      state_class: measurement
+      unit_of_measurement: "%"
+      device_class: damper
+    sensor.keen_vent_position_primary_bedroom:
+      state_class: measurement
+      unit_of_measurement: "%"
+      device_class: damper
+    sensor.keen_vent_position_primary_bathroom:
+      state_class: measurement
+      unit_of_measurement: "%"
+      device_class: damper
+    sensor.keen_vent_position_dining_room:
+      state_class: measurement
+      unit_of_measurement: "%"
+      device_class: damper
+    sensor.keen_vent_position_hallway_bathroom:
+      state_class: measurement
+      unit_of_measurement: "%"
+      device_class: damper
+    sensor.keen_vent_position_living_room:
+      state_class: measurement
+      unit_of_measurement: "%"
+      device_class: damper
+    sensor.house_feels_like_temperature:
+      state_class: measurement
+      unit_of_measurement: "ºF"
+      device_class: temperature
+#
+# Input Boolean
+#
+input_boolean:
+  # master switch to turn vent automation on/off
+  vent_automation:
+    name: Vent Automation
+    initial: true
+  keen_mode:
+    name: Enable Setpoint mode
+    initial: false
+#
+# Input Number
+#
+input_number:
+  # input number controls and offsets, in no particular order by room
+  #
+  # DINING ROOM
+  dining_room_keen_target:
+    name: Dining Room
+    min: 60
+    max: 86
+    step: 0.5
+  dining_room_keen_offset:
+    name: Dining Room
+    min: -5
+    max: 5
+    initial: 0
+    step: 0.5
+  #
+  # HALLWAY BATHROOM
+  hallway_bathroom_keen_target:
+    name: Hallway Bathroom
+    min: 60
+    max: 86
+    step: 0.5
+  hallway_bathroom_keen_offset:
+    name: Hallway Bathroom
+    min: -5
+    max: 5
+    initial: 0
+    step: 0.5
+  #
+  # LIVING ROOM
+  living_room_keen_target:
+    name: Living Room
+    min: 60
+    max: 86
+    step: 0.5
+  living_room_keen_offset:
+    name: Living Room
+    min: -5
+    max: 5
+    initial: 0
+    step: 0.5
+  #
+  # OFFICE
+  office_keen_target:
+    name: Office
+    min: 60
+    max: 86
+    step: 0.5
+  office_keen_offset:
+    name: Office
+    min: -5
+    max: 5
+    initial: 0
+    step: 0.5
+  #
+  # PRIMARY BATHROOM
+  primary_bathroom_keen_target:
+    name: Primary Bathroom
+    min: 60
+    max: 86
+    step: 0.5
+  primary_bathroom_keen_offset:
+    name: Primary Bathroom
+    min: -5
+    max: 5
+    initial: 0
+    step: 0.5
+  #
+  # PRIMARY BEDROOM
+  primary_bedroom_keen_target:
+    name: Primary Bedroom
+    min: 60
+    max: 86
+    step: 0.5
+  primary_bedroom_keen_offset:
+    name: Primary Bedroom
+    min: -5
+    max: 5
+    initial: 0
+    step: 0.5
+#
+# Input select
+#
+input_select:
+  keen_fan_mode:
+    name: Keen Fan Mode
+    options:
+      - "Open"
+      - "Balanced"
+    icon: mdi:fan
+#
+# Templates
+#
+## Creates an entity that works with input_select.keen_fan_mode and can change icons in frontend
+template:
+  - select:
+    - name: "Keen Fan Mode Select"
+      unique_id: keen_fan_mode_select
+      state: "{{ states('input_select.keen_fan_mode') }}"
+      options: "{{ ['Open','Balanced'] }}"
+      icon: >-
+        {% if is_state('input_select.keen_fan_mode', 'Open') %}
+          mdi:fan
+        {% elif is_state('input_select.keen_fan_mode', 'Balanced') %}
+          mdi:scale-balance
+        {% endif %}
+      select_option:
+        service: input_select.select_option
+        data:
+          option: "{{ option }}"
+        target:
+          entity_id: input_select.keen_fan_mode
+#
+# Groups
+#
+group:
+  dining_room_vents:
+    name: Dining Room Vents
+    entities:
+      - cover.keen_vent_dining_room
+  hallway_bathroom_vents:
+    name: Hallway Bathroom Vents
+    entities:
+      - cover.keen_vent_hallway_bathroom
+  living_room_vents:
+    name: Living Room Vents
+    entities:
+      - cover.keen_vent_living_room
+  office_vents:
+    name: Office Vents
+    entities:
+      - cover.keen_vent_office
+  primary_bedroom_vents:
+    name: Primary Bedroom Vents
+    entities:
+      - cover.keen_vent_primary_bedroom
+  primary_bathroom_vents:
+    name: Primary Bathroom Vents
+    entities:
+      - cover.keen_vent_primary_bathroom
+
+  ecobee_main_vents:
+    name: Vents Controlled by Ecobee Corridor
+    entities:
+      - group.dining_room_vents
+      - group.hallway_bathroom_vents
+      - group.living_room_vents
+      - group.office_vents
+      - group.primary_bedroom_vents
+      - group.primary_bathroom_vents
+
+  temperature_setpoints:
+    name: Keen Control Targets
+    entities:
+      - input_number.dining_room_keen_target
+      - input_number.hallway_bathroom_keen_target
+      - input_number.living_room_keen_target
+      - input_number.office_keen_target
+      - input_number.primary_bathroom_keen_target
+      - input_number.primary_bedroom_keen_target
+
+  keen_offsets:
+    name: Keen Temperature Offset
+    entities:
+      - input_number.dining_room_keen_offset
+      - input_number.hallway_bathroom_keen_offset
+      - input_number.living_room_keen_offset
+      - input_number.office_keen_offset
+      - input_number.primary_bathroom_keen_offset
+      - input_number.primary_bedroom_keen_offset
+
+#
+# AUTOMATIONS
+#
+automation:
+  - id: "Ecobee to Keen with Offset"
+    alias: ecobee to Keen automation, with per room offset
+    description: "Set the value of the keen control for all rooms to match the thermostat set point accounting for per room offsets."
+    trigger:
+      - platform: state
+        entity_id:
+          - climate.corridor_homekit
+          - input_number.dining_room_keen_offset
+          - input_number.hallway_bathroom_keen_offset
+          - input_number.living_room_keen_offset
+          - input_number.office_keen_offset
+          - input_number.primary_bathroom_keen_offset
+          - input_number.primary_bedroom_keen_offset
+          - input_boolean.vent_automation
+    condition:
+      - condition: state
+        entity_id: input_boolean.vent_automation
+        state: "on"
+      - condition: state
+        entity_id: input_boolean.keen_mode
+        state: "off"
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.dining_room_keen_target
+        data:
+          value: '{{ (state_attr("climate.corridor_homekit", "temperature")|float)+states("input_number.dining_room_keen_offset")|float }}'
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.hallway_bathroom_keen_target
+        data:
+          value: '{{ (state_attr("climate.corridor_homekit", "temperature")|float)+states("input_number.hallway_bathroom_keen_offset")|float }}'
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.living_room_keen_target
+        data:
+          value: '{{ (state_attr("climate.corridor_homekit", "temperature")|float)+states("input_number.living_room_keen_offset")|float }}'
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.office_keen_target
+        data:
+          value: '{{ (state_attr("climate.corridor_homekit", "temperature")|float)+states("input_number.office_keen_offset")|float }}'
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.primary_bathroom_keen_target
+        data:
+          value: '{{ (state_attr("climate.corridor_homekit", "temperature")|float)+states("input_number.primary_bathroom_keen_offset")|float }}'
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.primary_bedroom_keen_target
+        data:
+          value: '{{ (state_attr("climate.corridor_homekit", "temperature")|float)+states("input_number.primary_bedroom_keen_offset")|float }}'
+    mode: restart
+    #####
+    #   This automation is to make climate control work in a setpoint mode, when the each per-room absolute temperature setting, will affect the set point of the thermostat.
+  - id: "Keen Setpoint Mode"
+    alias: Climate Set point mode
+    description:
+      Set the setpoint of the thermostat, based on the tempertature settings
+      of each individual room.
+    trigger:
+      - platform: state
+        entity_id:
+          input_number.dining_room_keen_target, input_number.hallway_bathroom_keen_target,
+          input_number.living_room_keen_target, input_number.office_keen_target, input_number.primary_bathroom_keen_target,
+          input_number.primary_bedroom_keen_target, input_boolean.keen_mode
+          #any of the changes to either the per room control or when the set point mode is enabled will trigger the calulation
+        enabled: true
+    condition:
+      - condition: and
+        conditions:
+          - condition: state
+            entity_id: input_boolean.keen_mode
+            state: "on"
+      - condition: state
+        entity_id: input_boolean.vent_automation
+        state: "on"
+    action:
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.corridor_homekit
+        data:
+          temperature: >
+            {{ (((states('input_number.living_room_keen_target') | float)
+            +(states('input_number.dining_room_keen_target') | float)
+            +(states('input_number.office_keen_target') | float)
+            +(states('input_number.hallway_bathroom_keen_target') | float)
+            +(states('input_number.primary_bathroom_keen_target') | float)
+            +(states('input_number.primary_bedroom_keen_target')|float))/6) | round(0) }}
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 10
+          milliseconds: 0
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.corridor
+        data:
+          temperature: >
+            {{ 
+              (((states('input_number.living_room_keen_target') | float)
+              +(states('input_number.dining_room_keen_target') | float)
+              +(states('input_number.office_keen_target') | float)
+              +(states('input_number.hallway_bathroom_keen_target') | float)
+              +(states('input_number.primary_bathroom_keen_target') | float)
+              +(states('input_number.primary_bedroom_keen_target')|float))/6) | round(1) }}
+    mode: restart
+#
+#to work put this in configuration.yaml:
+#homeassistant:
+#  packages: !include_dir_named packages

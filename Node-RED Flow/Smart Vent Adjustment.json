@@ -1,0 +1,1194 @@
+[
+    {
+        "id": "5e644e04.a23e78",
+        "type": "tab",
+        "label": "Smart Vent Adjustment",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "043cd4d59cbfa311",
+        "type": "group",
+        "z": "5e644e04.a23e78",
+        "name": "Settings assignments",
+        "style": {
+            "stroke": "none",
+            "fill": "#ffdf7f",
+            "fill-opacity": "0.23",
+            "label": true,
+            "label-position": "se"
+        },
+        "nodes": [
+            "a59e3092.d68a18",
+            "1c5de7dd.e61aa8",
+            "9013b4b59fc4a753",
+            "50978bb1afb24e5d",
+            "e2f00950bb902177"
+        ],
+        "x": 664,
+        "y": 689,
+        "w": 292,
+        "h": 290,
+        "info": "These nodes set variables for the settings passed ot the function node which calculates how much to open the vents"
+    },
+    {
+        "id": "f7af37c4f119539f",
+        "type": "group",
+        "z": "5e644e04.a23e78",
+        "name": "Climate Control",
+        "style": {
+            "stroke": "#9363b7",
+            "fill": "#6f2fa0",
+            "fill-opacity": "0.05",
+            "label": true,
+            "color": "#6f2fa0"
+        },
+        "nodes": [
+            "85f3c3b5.fdf968",
+            "1874d4b0.289beb",
+            "8efdc9cc.e9e348",
+            "5e89fdddb83e219b",
+            "ddc50ea9e9065a33",
+            "b445af83922f23b3",
+            "c1a654fff29f5e6b",
+            "fd5049e7cb5a34d8"
+        ],
+        "x": 34,
+        "y": 29,
+        "w": 882,
+        "h": 202,
+        "info": "Nodes in this group ar generally to react to the changes to the states of the thermostat and room's temperature offsets and targets."
+    },
+    {
+        "id": "edabdae6b1de4bf7",
+        "type": "junction",
+        "z": "5e644e04.a23e78",
+        "x": 900,
+        "y": 290,
+        "wires": [
+            [
+                "6d73d20c4918ca28"
+            ]
+        ]
+    },
+    {
+        "id": "116fad3.9d449d3",
+        "type": "switch",
+        "z": "5e644e04.a23e78",
+        "name": "Fan/Heat/Cool",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "cooling",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "heating",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "fan",
+                "vt": "str"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 3,
+        "x": 130,
+        "y": 290,
+        "wires": [
+            [
+                "dea428ed7ac1221c"
+            ],
+            [
+                "855215206cff67b7"
+            ],
+            [
+                "361f43a26b1b8bb0"
+            ]
+        ],
+        "info": "### Purpose:\nThis node redirects the flow based on the HVAC operation mode.\n### Dependencies:\nThis node cannot operate without the _ecobee_main_hvac_status_ template sensor `/config/packages/smart_vent_control.yaml`\n### Need:\nThis node is necessary for this flow to operate."
+    },
+    {
+        "id": "85f3c3b5.fdf968",
+        "type": "api-current-state",
+        "z": "5e644e04.a23e78",
+        "g": "f7af37c4f119539f",
+        "name": "Ecobee Status",
+        "server": "9f0ef25a.b0945",
+        "version": 3,
+        "outputs": 1,
+        "halt_if": "",
+        "halt_if_type": "str",
+        "halt_if_compare": "is",
+        "entity_id": "sensor.ecobee_main_hvac_status",
+        "state_type": "str",
+        "blockInputOverrides": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "entityState"
+            },
+            {
+                "property": "data",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "entity"
+            },
+            {
+                "property": "topic",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "triggerId"
+            }
+        ],
+        "for": 0,
+        "forType": "num",
+        "forUnits": "minutes",
+        "x": 370,
+        "y": 130,
+        "wires": [
+            [
+                "5e89fdddb83e219b"
+            ]
+        ],
+        "info": "### Purpose:\nThe first node in the group is an \"API Current State\" node, which retrieves the current state of the Ecobee thermostat using the Home Assistant server. The output of this node is sent to a \"Wait for HVAC Run\" node, which waits until the HVAC system is actively running before allowing the message to pass through.\n### Dependencies:\nThis node cannot operate without the _ecobee_main_hvac_status_ template sensor `/config/packages/smart_vent_control.yaml`\n### Need:\nThis node is critical for this flow to operate."
+    },
+    {
+        "id": "1874d4b0.289beb",
+        "type": "change",
+        "z": "5e644e04.a23e78",
+        "g": "f7af37c4f119539f",
+        "name": "STOP if Thermostat is Idle or the Vent Control is disabled",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "stop",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 455,
+        "y": 190,
+        "wires": [
+            [
+                "ddc50ea9e9065a33"
+            ]
+        ],
+        "icon": "font-awesome/fa-hand-stop-o",
+        "l": false,
+        "info": "Generates a stop message to stop the Timer node from allowing the message output, if neither the climate control not the fan are running."
+    },
+    {
+        "id": "8efdc9cc.e9e348",
+        "type": "trigger-state",
+        "z": "5e644e04.a23e78",
+        "g": "f7af37c4f119539f",
+        "name": "Ecobee Trigger",
+        "server": "9f0ef25a.b0945",
+        "version": 2,
+        "exposeToHomeAssistant": false,
+        "haConfig": [
+            {
+                "property": "name",
+                "value": ""
+            },
+            {
+                "property": "icon",
+                "value": ""
+            }
+        ],
+        "entityid": "sensor.ecobee_main_hvac_status|input_boolean.vent_automation",
+        "entityidfiltertype": "regex",
+        "debugenabled": true,
+        "constraints": [
+            {
+                "targetType": "entity_id",
+                "targetValue": "sensor.ecobee_main_hvac_status",
+                "propertyType": "current_state",
+                "propertyValue": "new_state.state",
+                "comparatorType": "is_not",
+                "comparatorValueDatatype": "str",
+                "comparatorValue": "idle"
+            },
+            {
+                "targetType": "entity_id",
+                "targetValue": "input_boolean.vent_automation",
+                "propertyType": "current_state",
+                "propertyValue": "new_state.state",
+                "comparatorType": "is",
+                "comparatorValueDatatype": "str",
+                "comparatorValue": "on"
+            }
+        ],
+        "inputs": 1,
+        "outputs": 2,
+        "customoutputs": [],
+        "outputinitially": true,
+        "state_type": "str",
+        "enableInput": true,
+        "x": 140,
+        "y": 180,
+        "wires": [
+            [
+                "85f3c3b5.fdf968"
+            ],
+            [
+                "1874d4b0.289beb"
+            ]
+        ],
+        "outputLabels": [
+            "AC is not Idle",
+            "AC is idle or keen control is disabled"
+        ],
+        "info": "### Purpose:\nA \"Trigger State\" node is used to trigger the climate control flow when there is a change in the HVAC system's status. This node is connected to both the \"API Current State\" and \"Stop\" nodes, allowing it to respond to changes in the HVAC system's status in real time.\n### Dependencies:\nThis node cannot operate without the _ecobee_main_hvac_status_ template sensor and the _vent_automation_ input boolean in `/config/packages/smart_vent_control.yaml`\n### Need:\nThis node is necessary for this flow to operate"
+    },
+    {
+        "id": "ef74d342.b3b56",
+        "type": "api-call-service",
+        "z": "5e644e04.a23e78",
+        "name": "Adjust Vent Position",
+        "server": "9f0ef25a.b0945",
+        "version": 5,
+        "debugenabled": true,
+        "domain": "cover",
+        "service": "set_cover_position",
+        "areaId": [],
+        "deviceId": [],
+        "entityId": [],
+        "data": "",
+        "dataType": "json",
+        "mergeContext": "",
+        "mustacheAltTags": false,
+        "outputProperties": [],
+        "queue": "none",
+        "x": 790,
+        "y": 590,
+        "wires": [
+            []
+        ],
+        "info": "Calls the services based on the outout of the functoin nodes upstream.\n\nCritical."
+    },
+    {
+        "id": "8275f007.b66f1",
+        "type": "watch",
+        "z": "5e644e04.a23e78",
+        "name": "Vent Settings Update",
+        "files": "/config/vent-settings",
+        "recursive": "",
+        "x": 160,
+        "y": 850,
+        "wires": [
+            [
+                "e8e89921.4c436",
+                "680d63c0e23619d0",
+                "ddbd6657a8332c0e"
+            ]
+        ],
+        "info": "Trigegrs a reload of a setting from the _/config/vent-settings/_ if the change to a settings file is detected."
+    },
+    {
+        "id": "e8e89921.4c436",
+        "type": "file in",
+        "z": "5e644e04.a23e78",
+        "name": "Heat Settings Retrieval",
+        "filename": "/config/vent-settings/heat.json",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 460,
+        "y": 750,
+        "wires": [
+            [
+                "a59e3092.d68a18"
+            ]
+        ]
+    },
+    {
+        "id": "a59e3092.d68a18",
+        "type": "function",
+        "z": "5e644e04.a23e78",
+        "g": "043cd4d59cbfa311",
+        "name": "Store Heat Settings",
+        "func": "// sets the flow-context variable for main vent heat settings\ntry {\n    var settings = JSON.parse(msg.payload);\n    flow.set(\"heat\", settings);\n    node.status({fill:\"yellow\",shape:\"dot\",text:\"Heating Settings Loaded\"});\n} catch (e) {\n    node.warn(\"error while parsing settings\");\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 730,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8d08004b.70147",
+        "type": "change",
+        "z": "5e644e04.a23e78",
+        "name": "Heating",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\"action\":\"heat\",\"settings\": \"heat\"}",
+                "tot": "json"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 770,
+        "y": 300,
+        "wires": [
+            [
+                "edabdae6b1de4bf7"
+            ]
+        ],
+        "icon": "font-awesome/fa-fire",
+        "info": "### Purpose:\nThis node is used to inject the heating settings into the flow. In this context, for day time heating.\n### Dependencies:\nThis node cannot operate without the settings present as a flow variable, set by the nodes in the Settings assignments group\n### Need:\nThis node is needed if you need the vents controlled when the HVAC is heating."
+    },
+    {
+        "id": "1c5de7dd.e61aa8",
+        "type": "function",
+        "z": "5e644e04.a23e78",
+        "g": "043cd4d59cbfa311",
+        "name": "Store Cool Settings",
+        "func": "// sets the flow-context variable for main vent cool settings\ntry {\n    var settings = JSON.parse(msg.payload);\n    flow.set(\"cool\", settings);\n    node.status({ fill: \"blue\", shape: \"dot\", text: \"Cooling Settings Loaded\" });\n} catch (e) {\n    node.warn(\"error while parsing settings\");\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 830,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9013b4b59fc4a753",
+        "type": "function",
+        "z": "5e644e04.a23e78",
+        "g": "043cd4d59cbfa311",
+        "name": "Store Fan Balance Settings",
+        "func": "// sets the flow-context variable for main vent cool settings\ntry {\n    var settings = JSON.parse(msg.payload);\n    flow.set(\"fan_balance\", settings);\n    node.status({ fill: \"green\", shape: \"dot\", text: \"Fan Settings Loaded\" });\n} catch (e) {\n    node.warn(\"error while parsing settings\");\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 880,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6db3306a262600e9",
+        "type": "change",
+        "z": "5e644e04.a23e78",
+        "name": "Fan—Balance",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\"action\":\"fan\",\"settings\":\"fan_balance\"}",
+                "tot": "json"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 790,
+        "y": 420,
+        "wires": [
+            [
+                "059594e2ab4990c2"
+            ]
+        ],
+        "icon": "font-awesome/fa-balance-scale",
+        "info": "### Purpose:\nThis node is used to inject the fan settings into the flow. In this context, for ventilation with vents positions to balance the room temperature.\n### Dependencies:\nThis node cannot operate without the settings present as a flow variable, set by the nodes in the Settings assignments group.\n### Need:\nThis node is needed to if you need the vents controlled when the HVAC is in fan mode."
+    },
+    {
+        "id": "ccfacdeddcb89090",
+        "type": "api-current-state",
+        "z": "5e644e04.a23e78",
+        "name": "Fan Mode",
+        "server": "9f0ef25a.b0945",
+        "version": 3,
+        "outputs": 2,
+        "halt_if": "Open",
+        "halt_if_type": "str",
+        "halt_if_compare": "is",
+        "entity_id": "input_select.keen_fan_mode",
+        "state_type": "str",
+        "blockInputOverrides": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "entityState"
+            },
+            {
+                "property": "data",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "entity"
+            },
+            {
+                "property": "topic",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "triggerId"
+            }
+        ],
+        "for": 0,
+        "forType": "num",
+        "forUnits": "minutes",
+        "x": 530,
+        "y": 370,
+        "wires": [
+            [
+                "336b60f6b8912733"
+            ],
+            [
+                "6db3306a262600e9"
+            ]
+        ],
+        "outputLabels": [
+            "Open",
+            "Balanced"
+        ],
+        "icon": "node-red/switch.svg",
+        "info": "### Purpose:\nThis node redirects the flow based on the fan mode selection in HA. \n### Dependencies:\nThis node cannot operate without the _keen_fan_mode_ input select `/config/packages/smart_vent_control.yaml`\n### Need:\nThis node is optional based on the need for different fan operation modes."
+    },
+    {
+        "id": "dea428ed7ac1221c",
+        "type": "change",
+        "z": "5e644e04.a23e78",
+        "name": "Cooling",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\"action\":\"cool\",\"settings\":\"cool\"}",
+                "tot": "json"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 770,
+        "y": 260,
+        "wires": [
+            [
+                "edabdae6b1de4bf7"
+            ]
+        ],
+        "icon": "font-awesome/fa-snowflake-o",
+        "info": "### Purpose:\nThis node is used to inject the cooling settings into the flow. \n### Dependencies:\nThis node cannot operate without the settings present as a flow variable, set by the nodes in the Settings assignments group\n### Need:\nThis node is needed if you need the vents controlled for cooling HVAC mode."
+    },
+    {
+        "id": "5e89fdddb83e219b",
+        "type": "ha-wait-until",
+        "z": "5e644e04.a23e78",
+        "g": "f7af37c4f119539f",
+        "name": "Wait for HVAC Run",
+        "server": "9f0ef25a.b0945",
+        "version": 2,
+        "outputs": 1,
+        "entityId": "sensor.ecobee_main_hvac_status",
+        "entityIdFilterType": "exact",
+        "property": "state",
+        "comparator": "is_not",
+        "value": "idle",
+        "valueType": "str",
+        "timeout": 0,
+        "timeoutType": "num",
+        "timeoutUnits": "seconds",
+        "checkCurrentState": true,
+        "blockInputOverrides": false,
+        "outputProperties": [],
+        "x": 550,
+        "y": 130,
+        "wires": [
+            [
+                "ddc50ea9e9065a33"
+            ]
+        ],
+        "info": "### Purpose:\nThis prevents the flow from progressing unless the HVAC is actually running\n### Dependencies:\nThis node cannot operate without the _ecobee_main_hvac_status_ template sensor `/config/packages/smart_vent_control.yaml`\n### Need:\nThis node is necessary for this flow to operate as intended. It is not critical."
+    },
+    {
+        "id": "56b0c42d21cc99f5",
+        "type": "function",
+        "z": "5e644e04.a23e78",
+        "name": "Heat/Cool Vents Position",
+        "func": "const DEADBAND = 6;\nconst MIN_POSITION = 0;\nconst MAX_POSITION = 99;\nconst MEAN_POSITION = 60;\nconst globalHomeAssistant = global.get('homeassistant');\nvar success = true;\n\ntry {\n    var settings_name = msg.payload.settings;\n    var settings = flow.get(settings_name);\n    if (settings.vstw === undefined) {\n        node.warn(\"no settings available for \" + settings_name);\n        success = false;\n    }\n} catch (e) {\n    node.warn(\"error with parameters, aborting\");\n    success = false;\n}\n\nconst action = msg.payload.action;\nif (!action || (action !== \"heat\" && action !== \"cool\")) {\n    node.warn(\"Invalid or missing action payload. Please provide either 'heat' or 'cool, or check the flow connections'.\");\n    success = false;\n}\n\nif (success) {\n    // Removed the redeclaration of the 'action' variable\n\n    const updatedSettings = settings.vstw.map(vstw => {\n\n        const current_temp = parseFloat(globalHomeAssistant.homeAssistant.states[vstw.sensor].state);\n        const target_temp = parseFloat(globalHomeAssistant.homeAssistant.states[vstw.target].state);\n\n        // Check if the vent is a group, and extract individual vent entities if needed\n        const vent_entities = [];\n        if (globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id) {\n            vent_entities.push(...globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id);\n        } else {\n            vent_entities.push(vstw.vent);\n        }\n\n        return { ...vstw, sensor: current_temp, target: target_temp, vents: vent_entities, room_min_position: vstw.min_position };\n\n    });\n    const sortedSettings = action === 'cool'\n        ? updatedSettings.sort((a, b) => (b.sensor - b.target) - (a.sensor - a.target))\n        : updatedSettings.sort((a, b) => (b.target - b.sensor) - (a.target - a.sensor));\n\n    const newPositions = sortedSettings.map((room, index, array) => {\n        const positionRange = MAX_POSITION - MIN_POSITION;\n        const rangeStep = positionRange / (array.length - 2);\n        let newPosition = Math.round(MAX_POSITION - (index - 1) * rangeStep);\n\n        // Apply room_min_position constraint\n        newPosition = Math.max(newPosition, room.room_min_position || MIN_POSITION);\n\n        if (index === 0) {\n            newPosition = MAX_POSITION;\n        } else if (index === array.length - 1) {\n            newPosition = room.room_min_position || MIN_POSITION;\n        }\n\n        return {\n            vent: room.vent,\n            position: newPosition\n        };\n    });\n\n    const totalWeight = updatedSettings.reduce((sum, room) => sum + room.weight, 0);\n    const weightedMeanPosition = newPositions.reduce((sum, room, index) => sum + room.position * updatedSettings[index].weight, 0) / totalWeight;\n\n    if (weightedMeanPosition < MEAN_POSITION) {\n        const adjustment = Math.round(MEAN_POSITION - weightedMeanPosition);\n        newPositions.forEach((room, index) => {\n            if (index > 0 && index < newPositions.length - 1) {\n                room.position += adjustment;\n                room.position = Math.min(MAX_POSITION, room.position);\n            }\n        });\n    }\n\n    const messages = [];\n\n    updatedSettings.forEach((room, index) => {\n        const newPosition = newPositions[index];\n\n        room.vents.forEach(vent => {\n            const ventEntity = globalHomeAssistant.homeAssistant.states[vent];\n            if (!ventEntity) {\n                node.warn(`Vent entity '${vent}' not found in Home Assistant states.`);\n                return;\n            }\n\n            // Extract the current position from the current_position attribute\n            const currentPosition = parseFloat(ventEntity.attributes[\"current_position\"]);\n            const friendlyName = ventEntity.attributes[\"friendly_name\"];\n            const delta = Math.abs(newPosition.position - currentPosition);\n\n            node.warn(`Working with vent — ${friendlyName}: newPosition: ${newPosition.position}, currentPosition: ${currentPosition}.`);\n\n            if (delta >= DEADBAND) {\n                node.status({ fill: \"green\", shape: \"dot\", text: \"Changing cover positions. New average mean is \" + Math.round(weightedMeanPosition) });\n                const new_msg = { payload: msg.payload, topic: msg.topic };\n                new_msg.payload = { \"vent_name\": vent, \"data\": { \"entity_id\": vent, \"position\": newPosition.position } };\n                messages.push(new_msg);\n            } else {\n                node.status({ fill: \"blue\", shape: \"ring\", text: \"Already at a position. Average mean is \" + Math.round(weightedMeanPosition) });\n            }\n        });\n    });\n    // const sortedMessages = messages.sort((a, b) => {\n    //     const diffA = a.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[a.payload.vent_name].attributes[\"current_position\"]);\n    //     const diffB = b.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[b.payload.vent_name].attributes[\"current_position\"]);\n\n    //     if (diffA >= 0 && diffB >= 0) {\n    //         return diffB - diffA;\n    //     } else if (diffA < 0 && diffB < 0) {\n    //         return diffA - diffB;\n    //     } else if (diffA >= 0 && diffB < 0) {\n    //         return -1;\n    //     } else {\n    //         return 1;\n    //     }\n    // });\n    const sortedMessages = messages.sort((a, b) => {\n        const diffA = a.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[a.payload.vent_name].attributes[\"current_position\"]);\n        const diffB = b.payload.data.position - parseFloat(globalHomeAssistant.homeAssistant.states[b.payload.vent_name].attributes[\"current_position\"]);\n\n        if (diffA >= 0 && diffB >= 0) {\n            return diffB - diffA;\n        } else if (diffA < 0 && diffB < 0) {\n            return Math.abs(diffA) - Math.abs(diffB);\n        } else {\n            return diffB - diffA;\n        }\n    });\n\n    node.warn( sortedMessages );\n    if (sortedMessages.length > 0) {\n        const formattedMessage = sortedMessages.map((msg) => {\n            const positionChange = msg.payload.data.position - parseFloat(\n                globalHomeAssistant.homeAssistant.states[msg.payload.vent_name].attributes[\"current_position\"]\n            );\n            const changeSymbol = positionChange >= 0 ? \"+\" : \"\";\n            return `${msg.payload.vent_name}: ${changeSymbol}${positionChange.toFixed(0)}`;\n        }).join(\", \");\n\n        node.warn(\"Vents adjustment order: \");\n        node.warn(formattedMessage);\n    } else {\n        node.warn(\"Same vent priority as before.\");\n    }\n\n    return [sortedMessages];\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 230,
+        "y": 550,
+        "wires": [
+            [
+                "fe146fece1399f21"
+            ]
+        ],
+        "info": "### Purpose:\nThe javascript in this node calculates the position of the vents while the system is in either heating or cooling mode.\n### Dependencies:\nPretty much everything leading up to this point in the flow.\n### Need:\nCritical.\n\n### Constants:\n#### DEADBAND\ndefault = 6\n\nrecommended range: 4-8\n\nUsed as a check to prevent vents from being adjusted if the new vent position value is not within the DEADBAND from the current value.\nThe vent position is not always accurate, and if the vent’s actual position differs from the intended one just a little, it will continue being adjusted frequently. Some vents have too much backlash, especially at higher values (open).\nThis is further helped by the max position not being set to 100.\nIncrease this value if you notice that vents are adjusted on every cycle, even with the calculated values for the vent staying the same for the given cycle.\nIncreasing this value too much may lower the system’s effectiveness but will improve the battery life of the vents.\nThis is not an HVAC temperature deadband.\n#### MIN_POSITION\ndefault = 0\n\nrecommended range: 0-20\n\nSets the minimum opening position. This is overridden by config/vent-settings/ settings on a per-room basis. The value is used if the .json lacks the min_position value for the room.\nIf the vents are too noisy at their minimum position, and you do not want to adjust the JSON settings files in config/vent-settings/, you can increase this value.\nSetting this value too high will lower thermal comfort.\n#### MAX_POSITION\ndefault = 99\n\nrecommended range: 99-99\n\nSets the maximum open position for vents. Keeping this setting at 99 instead of 100 will prevent the vent slap and backlash during the actuation towards the maximum position. There is no material difference in the airflow between 99 and 100.\n#### MEAN_POSITION\ndefault = 60\n\nrecommended range: 55-65\n\nThis sets the value the script tries to achieve as a minimum mean position of all the combined vents. In theory, this value should not be lower than 60—as in no more than 40% of the vents in any HVAC system should be closed at any one time.\nIn practice, I feel, this may be set to as low as 50, as the script will never allow more than one vent to be closed, and most of the time, fewer than 50% of the vents are at a lower position than 50.\nYou could increase this value if you feel that the system has too much vent noise. However, setting this to higher numbers may decrease temperature comfort."
+    },
+    {
+        "id": "ddc50ea9e9065a33",
+        "type": "trigger",
+        "z": "5e644e04.a23e78",
+        "g": "f7af37c4f119539f",
+        "name": "Vents Timer",
+        "op1": "",
+        "op2": "",
+        "op1type": "pay",
+        "op2type": "nul",
+        "duration": "-150",
+        "extend": false,
+        "overrideDelay": false,
+        "units": "s",
+        "reset": "stop",
+        "bytopic": "all",
+        "topic": "topic",
+        "outputs": 1,
+        "x": 740,
+        "y": 190,
+        "wires": [
+            [
+                "b445af83922f23b3"
+            ]
+        ],
+        "icon": "node-red-contrib-looptimer-advanced/looptimer_advanced.png",
+        "info": "### Purpose:\nTimes the interval at which the vents are controlled unless restarted by Offsets and Targets input. The timer will stop the flow once it receives the stop message when the HVAC is not running. \n### Dependencies:\nTo stop the flow the node needs to receive the 'stop' message.\n### Need:\nThis node is necessary for this flow to operate correctly. Without this node, the vents will continue adjusting indefinitely on a set interval."
+    },
+    {
+        "id": "fe146fece1399f21",
+        "type": "delay",
+        "z": "5e644e04.a23e78",
+        "name": "",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 590,
+        "y": 590,
+        "wires": [
+            [
+                "ef74d342.b3b56"
+            ]
+        ],
+        "info": "### Purpose:\nThis node controls the rate of how often the new calculated values are sent for execution by a call service node.\nIt will lower the chance of sudden pressure changes in the system.\n### Dependencies:\nFor good flow timing, this node is helped by the limiter after the _Offsets and Targets_ node.\n### Need:\nThis node is optional but recommended."
+    },
+    {
+        "id": "680d63c0e23619d0",
+        "type": "file in",
+        "z": "5e644e04.a23e78",
+        "name": "Cooling Setting Retrieval",
+        "filename": "/config/vent-settings/cool.json",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 470,
+        "y": 850,
+        "wires": [
+            [
+                "1c5de7dd.e61aa8",
+                "9013b4b59fc4a753",
+                "50978bb1afb24e5d"
+            ]
+        ]
+    },
+    {
+        "id": "2557b217.f2ba7e",
+        "type": "inject",
+        "z": "5e644e04.a23e78",
+        "name": "Initial Load",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.1",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 750,
+        "wires": [
+            [
+                "e8e89921.4c436",
+                "680d63c0e23619d0",
+                "ddbd6657a8332c0e"
+            ]
+        ],
+        "info": "Trigger an initial load of the vent settings from the files in the _/config/vent-settings/_ directory, when the flow runs."
+    },
+    {
+        "id": "6d73d20c4918ca28",
+        "type": "link out",
+        "z": "5e644e04.a23e78",
+        "name": "From Heating and cooling selelctors",
+        "mode": "link",
+        "links": [
+            "14bc533c3c0e0dbd"
+        ],
+        "x": 935,
+        "y": 290,
+        "wires": []
+    },
+    {
+        "id": "14bc533c3c0e0dbd",
+        "type": "link in",
+        "z": "5e644e04.a23e78",
+        "name": "link in 2",
+        "links": [
+            "6d73d20c4918ca28"
+        ],
+        "x": 85,
+        "y": 550,
+        "wires": [
+            [
+                "56b0c42d21cc99f5"
+            ]
+        ]
+    },
+    {
+        "id": "b445af83922f23b3",
+        "type": "link out",
+        "z": "5e644e04.a23e78",
+        "g": "f7af37c4f119539f",
+        "name": "From Climate Control trigger",
+        "mode": "link",
+        "links": [
+            "b03b02a39a160d2d"
+        ],
+        "x": 875,
+        "y": 190,
+        "wires": []
+    },
+    {
+        "id": "b03b02a39a160d2d",
+        "type": "link in",
+        "z": "5e644e04.a23e78",
+        "name": "To mode control selector",
+        "links": [
+            "b445af83922f23b3"
+        ],
+        "x": 25,
+        "y": 290,
+        "wires": [
+            [
+                "116fad3.9d449d3"
+            ]
+        ]
+    },
+    {
+        "id": "c1a654fff29f5e6b",
+        "type": "server-state-changed",
+        "z": "5e644e04.a23e78",
+        "g": "f7af37c4f119539f",
+        "name": "Offsets and Targets",
+        "server": "9f0ef25a.b0945",
+        "version": 4,
+        "exposeToHomeAssistant": false,
+        "haConfig": [
+            {
+                "property": "name",
+                "value": ""
+            },
+            {
+                "property": "icon",
+                "value": ""
+            }
+        ],
+        "entityidfilter": [
+            "input_number.dining_room_keen_target",
+            "input_number.dining_room_keen_offset",
+            "input_number.hallway_bathroom_keen_target",
+            "input_number.hallway_bathroom_keen_offset",
+            "input_number.living_room_keen_target",
+            "input_number.living_room_keen_offset",
+            "input_number.office_keen_target",
+            "input_number.office_keen_offset",
+            "input_number.primary_bathroom_keen_target",
+            "input_number.primary_bedroom_keen_offset",
+            "input_number.primary_bedroom_keen_target",
+            "input_number.primary_bathroom_keen_offset",
+            "input_select.keen_fan_mode"
+        ],
+        "entityidfiltertype": "list",
+        "outputinitially": false,
+        "state_type": "str",
+        "haltifstate": "",
+        "halt_if_type": "str",
+        "halt_if_compare": "is",
+        "outputs": 1,
+        "output_only_on_state_change": false,
+        "for": "0",
+        "forType": "num",
+        "forUnits": "minutes",
+        "ignorePrevStateNull": true,
+        "ignorePrevStateUnknown": true,
+        "ignorePrevStateUnavailable": true,
+        "ignoreCurrentStateUnknown": false,
+        "ignoreCurrentStateUnavailable": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "entityState"
+            },
+            {
+                "property": "data",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "eventData"
+            },
+            {
+                "property": "topic",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "triggerId"
+            }
+        ],
+        "x": 150,
+        "y": 70,
+        "wires": [
+            [
+                "fd5049e7cb5a34d8"
+            ]
+        ],
+        "info": "### Purpose:\nThis node will restart the timer if a per-room offset or per-room target temperatures are changed.\nThis will allow the vents' positions to change without waiting for the next timer cycle.\n### Dependencies:\nThis node relies on 'input_number' Home Assistant entities to be present.\nThese entities should be the same as used for per-room temperature offset control and the specific per-room target temperature controls if used.\nFor the purposes of this flow, the input_number controls were set in\n`/config/packages/smart_vent_control.yaml …input_number:`\n### Need\nThis node is optional, a nice-to-have.\nWith it, any changes to the offsets or targets will take effect until the next timer cycle."
+    },
+    {
+        "id": "fd5049e7cb5a34d8",
+        "type": "delay",
+        "z": "5e644e04.a23e78",
+        "g": "f7af37c4f119539f",
+        "name": "",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "10",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 265,
+        "y": 70,
+        "wires": [
+            [
+                "85f3c3b5.fdf968"
+            ]
+        ],
+        "l": false,
+        "info": "### Purpose:\nThis node limits the rate at which the messages about the changes to the rooms' temperature targets or offsets are injected into the node.\nThis allows attenuation of how often these messages affect the positions’ recalculation.\nEven though we drop messages at a particular rate, the changes done to the input numbers are still accounted for.\nThe reason for this is that we only use the changes to the input numbers as triggers. The values of the trigger numbers are evaluated in _Vents Positions Calculation_ function node later in the flow.\n### Dependencies:\nThis node relies on _Offsets and Targets_ node immediately upstream\n### Need\n - This limiter is highly recommended if you choose to limit the rate of how often the messages are sent from the _Vents Positions Calculation_ function node.\n - If you choose not to limit the service call frequency after the function node, then this node is unnecessary or may be used with a lower limit value."
+    },
+    {
+        "id": "4d749a9bdb981140",
+        "type": "function",
+        "z": "5e644e04.a23e78",
+        "name": "Fan Balance Position",
+        "func": "const DEADBAND = 8;\nconst MIN_POSITION = 15;\nconst MAX_POSITION = 99;\nconst globalHomeAssistant = global.get('homeassistant');\nvar success = true;\n\ntry {\n    var settings_name = msg.payload.settings;\n    var settings = flow.get(settings_name);\n    if (settings.vstw === undefined) {\n        node.warn(\"no settings available for \" + settings_name);\n        success = false;\n    }\n} catch (e) {\n    node.warn(\"error with parameters, aborting\");\n    success = false;\n}\n\nif (success) {\n    const updatedSettings = settings.vstw.map(vstw => {\n        const current_temp = parseFloat(globalHomeAssistant.homeAssistant.states[vstw.sensor].state);\n\n        const vent_entities = [];\n        if (globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id) {\n            vent_entities.push(...globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id);\n        } else {\n            vent_entities.push(vstw.vent);\n        }\n\n        return { ...vstw, sensor: current_temp, vents: vent_entities, room_min_position: vstw.min_position };\n    });\n\n    const avgHouseTemp = updatedSettings.reduce((sum, room) => sum + room.sensor, 0) / updatedSettings.length;\n\n    const sortedSettings = updatedSettings.sort((a, b) => Math.abs(b.sensor - avgHouseTemp) - Math.abs(a.sensor - avgHouseTemp));\n\n    const newPositions = sortedSettings.map((room, index, array) => {\n        const positionRange = MAX_POSITION - MIN_POSITION;\n        const rangeStep = positionRange / (sortedSettings.length - 1);\n        let newPosition;\n\n        if (index === 0 || index === array.length - 1) {\n            newPosition = MAX_POSITION;\n        } else {\n            newPosition = Math.round(MAX_POSITION - (index - 1) * rangeStep);\n            newPosition = Math.max(newPosition, room.room_min_position || MIN_POSITION);\n            newPosition = Math.min(newPosition, MAX_POSITION);\n        }\n\n        return {\n            vent: room.vent,\n            position: newPosition\n        };\n    });\n\n    // Set the room closest to the average house temperature to MIN position\n    const closestToAvgTempIndex = updatedSettings.findIndex(room => Math.abs(room.sensor - avgHouseTemp) === Math.min(...updatedSettings.map(room => Math.abs(room.sensor - avgHouseTemp))));\n    newPositions[closestToAvgTempIndex].position = MIN_POSITION;\n\n    const messages = [];\n\n    updatedSettings.forEach((room, index) => {\n        const newPosition = newPositions[index];\n\n        room.vents.forEach(vent => {\n            const ventEntity = globalHomeAssistant.homeAssistant.states[vent];\n            if (!ventEntity) {\n                node.warn(`Vent entity '${vent}' not found in Home Assistant states.`);\n                return;\n            }\n\n            const currentPosition = parseFloat(ventEntity.attributes[\"current_position\"]);\n            const friendlyName = ventEntity.attributes[\"friendly_name\"];\n            const delta = Math.abs(newPosition.position - currentPosition);\n\n            node.warn(`Working with vent — ${friendlyName}: newPosition: ${newPosition.position}, currentPosition: ${currentPosition}.`);\n\n            if (delta >= DEADBAND) {\n                node.status({ fill: \"green\", shape: \"dot\", text: \"Changing cover positions. Average house temperature is \" + avgHouseTemp.toFixed(1) + \"°C\" });\n                const new_msg = { payload: msg.payload, topic: msg.topic };\n                new_msg.payload = { \"vent_name\": vent, \"data\": { \"entity_id\": vent, \"position\": newPosition.position } };\n                messages.push(new_msg);\n            } else {\n                node.status({ fill: \"blue\", shape: \"ring\", text: \"Already at a position. Average house temperature is \" + avgHouseTemp.toFixed(1) + \"°C\" });\n            }\n        });\n    });\n\n    return [messages];\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 220,
+        "y": 600,
+        "wires": [
+            [
+                "fe146fece1399f21"
+            ]
+        ],
+        "info": "### Purpose:\nThe javascript in this node calculates the position of the vents while the system is in fan mode.\n### Dependencies:\nPretty much everything leading up to this point in the flow.\n### Need:\nNeeded if vent control is desired when HVAC is in the fan mode.\n\n### Constants:\n#### DEADBAND\ndefault = 8\n\nrecommended range: 6-10\n\nUsed as a check to prevent vents from being adjusted if the new vent position value is not within the DEADBAND from the current value.\nThe vent position is not always accurate, and if the vent's actual position differs from the intended one just a little, it will continue being adjusted frequently. Some vents have too much backlash when opening.\nThis is further helped by the max position not being set to 100.\nIncrease this value if you notice that vents are adjusted on every cycle, even with the calculated values for the vent staying the same for the given cycle.\nIncreasing this value will improve the battery life of the vents.\nThis is not an HVAC temperature deadband.\n#### MIN_POSITION\ndefault = 15\n\nrecommended range: 10-20\n\nSets the minimum opening position. This is overridden by config/vent-settings/ settings on a per-room basis. The value is used if the .json lacks the min_position value for the room.\nIf the vents are too noisy at their minimum position, and you do not want to adjust the JSON settings files in config/vent-settings/, you can increase this value.\nSetting this value too high may lower comfort.\n#### MAX_POSITION\ndefault = 99\n\nrecommended range: 99-99\n\nSets the maximum open position for vents. Keeping this setting at 99 instead of 100 will prevent the vent slap and backlash during the actuation towards the maximum position. There is no material difference in the airflow between 99 and 100.\n#### MEAN_POSITION\ndefault = 60\n\nrecommended range: 60-65\n\nThis sets the value the script tries to achieve as a minimum mean position of all the combined vents. In theory, this value should not be lower than 60—as in no more than 40% of the vents in any HVAC system should be closed at any one time.\nIn practice, I feel, this may be set to as low as 50, as the script will never allow more than one vent to be closed, and most of the time, fewer than 50% of the vents are at a lower position than 50.\nYou could increase this value if you feel that the system has too much vent noise. However, setting this to higher numbers may decrease temperature comfort."
+    },
+    {
+        "id": "059594e2ab4990c2",
+        "type": "link out",
+        "z": "5e644e04.a23e78",
+        "name": "From Fan Balance",
+        "mode": "link",
+        "links": [
+            "9b39cdcc1a9a9baf"
+        ],
+        "x": 935,
+        "y": 430,
+        "wires": []
+    },
+    {
+        "id": "9b39cdcc1a9a9baf",
+        "type": "link in",
+        "z": "5e644e04.a23e78",
+        "name": "To Vent Control Balanced",
+        "links": [
+            "059594e2ab4990c2"
+        ],
+        "x": 85,
+        "y": 600,
+        "wires": [
+            [
+                "4d749a9bdb981140"
+            ]
+        ]
+    },
+    {
+        "id": "d214b74ce13f0113",
+        "type": "function",
+        "z": "5e644e04.a23e78",
+        "name": "Fan Open Position",
+        "func": "const DEADBAND = 8;\nconst MAX_POSITION = 99;\nconst globalHomeAssistant = global.get('homeassistant');\nvar success = true;\n\ntry {\n    var settings_name = msg.payload.settings;\n    var settings = flow.get(settings_name);\n    if (settings.vstw === undefined) {\n        node.warn(\"no settings available for \" + settings_name);\n        success = false;\n    }\n} catch (e) {\n    node.warn(\"error with parameters, aborting\");\n    success = false;\n}\n\nif (success) {\n    const updatedSettings = settings.vstw.map(vstw => {\n        const vent_entities = [];\n        if (globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id) {\n            vent_entities.push(...globalHomeAssistant.homeAssistant.states[vstw.vent].attributes.entity_id);\n        } else {\n            vent_entities.push(vstw.vent);\n        }\n\n        return { ...vstw, vents: vent_entities };\n    });\n\n    const messages = [];\n\n    updatedSettings.forEach(room => {\n        room.vents.forEach(vent => {\n            const ventEntity = globalHomeAssistant.homeAssistant.states[vent];\n            if (!ventEntity) {\n                node.warn(`Vent entity '${vent}' not found in Home Assistant states.`);\n                return;\n            }\n\n            const currentPosition = parseFloat(ventEntity.attributes[\"current_position\"]);\n            const friendlyName = ventEntity.attributes[\"friendly_name\"];\n            const delta = Math.abs(MAX_POSITION - currentPosition);\n\n            node.warn(`Working with vent — ${friendlyName}: newPosition: ${MAX_POSITION}, currentPosition: ${currentPosition}.`);\n\n            if (delta >= DEADBAND) {\n                node.status({ fill: \"green\", shape: \"dot\", text: \"Setting vent to max position\" });\n                const new_msg = { payload: msg.payload, topic: msg.topic };\n                new_msg.payload = { \"vent_name\": vent, \"data\": { \"entity_id\": vent, \"position\": MAX_POSITION } };\n                messages.push(new_msg);\n            } else {\n                node.status({ fill: \"blue\", shape: \"ring\", text: \"Already near max position\" });\n            }\n        });\n    });\n\n    return [messages];\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 210,
+        "y": 650,
+        "wires": [
+            [
+                "fe146fece1399f21"
+            ]
+        ],
+        "info": "### Purpose:\nThe javascript in this node keeps the vents open while the system is in fan mode.\n### Dependencies:\nPretty much everything leading up to this point in the flow.\n### Need:\nNeeded if vent control is desired when HVAC is in the fan mode.\n\n### Constants:\n#### DEADBAND\ndefault = 8\n\nrecommended range: 6-10\n\nUsed as a check to prevent vents from being adjusted if the new vent position value is not within the DEADBAND from the current value.\nThe vent position is not always accurate, and if the vent's actual position differs from the intended one just a little, it will continue being adjusted frequently. Some vents have too much backlash when opening.\nThis is further helped by the max position not being set to 100.\nIncrease this value if you notice that vents are adjusted on every cycle, even with the calculated values for the vent staying the same for the given cycle.\nIncreasing this value will improve the battery life of the vents.\nThis is not an HVAC temperature deadband.\n\n#### MAX_POSITION\ndefault = 99\n\nrecommended range: 99-99\n\nSets the maximum open position for vents. Keeping this setting at 99 instead of 100 will prevent the vent slap and backlash during the actuation towards the maximum position. There is no material difference in the airflow between 99 and 100."
+    },
+    {
+        "id": "361f43a26b1b8bb0",
+        "type": "switch",
+        "z": "5e644e04.a23e78",
+        "name": "Bath Vent Check",
+        "property": "ventilate_bath",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "false"
+            },
+            {
+                "t": "null"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 350,
+        "y": 370,
+        "wires": [
+            [
+                "ccfacdeddcb89090"
+            ],
+            [
+                "ccfacdeddcb89090"
+            ]
+        ],
+        "outputLabels": [
+            "not running",
+            "unknown or null"
+        ],
+        "icon": "node-red-dashboard/ui_gauge.png",
+        "info": "### Purpose:\nThis node checks that the Bathroom Ventilation flow is not active. If it is, it will prevent the vents' position changes, as to not override the operation of that flow.\n### Dependencies:\nThis node depends on the custom Bathrooms Ventilation flow, not included with this depository.\n### Need:\nThis node is not necessary for this flow to operate."
+    },
+    {
+        "id": "50978bb1afb24e5d",
+        "type": "function",
+        "z": "5e644e04.a23e78",
+        "g": "043cd4d59cbfa311",
+        "name": "Store Fan Full Settings",
+        "func": "// sets the flow-context variable for main vent cool settings\ntry {\n    var settings = JSON.parse(msg.payload);\n    flow.set(\"fan_open\", settings);\n    node.status({ fill: \"green\", shape: \"dot\", text: \"Fan Settings Loaded\" });\n} catch (e) {\n    node.warn(\"error while parsing settings\");\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 790,
+        "y": 930,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "336b60f6b8912733",
+        "type": "change",
+        "z": "5e644e04.a23e78",
+        "name": "Fan—Full",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\"action\":\"fan\",\"settings\":\"fan_open\"}",
+                "tot": "json"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 770,
+        "y": 380,
+        "wires": [
+            [
+                "f2538e82dbd1a6e3"
+            ]
+        ],
+        "icon": "font-awesome/fa-flag",
+        "info": "### Purpose:\nThis node is used to inject the fan settings into the flow. In this context, for ventilation with all vents open.\n### Dependencies:\nThis node cannot operate without the settings present as a flow variable, set by the nodes in the Settings assignments group.\n### Need:\nThis node is needed if you need the vents controlled when the HVAC is in fan mode."
+    },
+    {
+        "id": "f2538e82dbd1a6e3",
+        "type": "link out",
+        "z": "5e644e04.a23e78",
+        "name": "From Fan Full/Open",
+        "mode": "link",
+        "links": [
+            "ddf1c8663e4de644"
+        ],
+        "x": 935,
+        "y": 370,
+        "wires": []
+    },
+    {
+        "id": "ddf1c8663e4de644",
+        "type": "link in",
+        "z": "5e644e04.a23e78",
+        "name": "To Vent control Open",
+        "links": [
+            "f2538e82dbd1a6e3"
+        ],
+        "x": 85,
+        "y": 650,
+        "wires": [
+            [
+                "d214b74ce13f0113"
+            ]
+        ]
+    },
+    {
+        "id": "1f8b38071d3a95b9",
+        "type": "switch",
+        "z": "5e644e04.a23e78",
+        "name": "Nigh mode",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "lte",
+                "v": "60",
+                "vt": "str"
+            },
+            {
+                "t": "gt",
+                "v": "60",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 540,
+        "y": 310,
+        "wires": [
+            [
+                "8d08004b.70147"
+            ],
+            [
+                "270cb1df0e12c7a7"
+            ]
+        ],
+        "outputLabels": [
+            "Not in bed",
+            "In bed"
+        ],
+        "info": "### Purpose:\nThis node redirects the flow based on whether or not anyone is in bed. It leads to a different heating setting to be selected when there is a person sleeping or in bed, to prevent excessive noise from the vent.\n### Dependencies:\nThis node cannot operate without the bed occupancy sensor data retrieved by a previous node.\n### Need:\nThis node is optional."
+    },
+    {
+        "id": "855215206cff67b7",
+        "type": "api-current-state",
+        "z": "5e644e04.a23e78",
+        "name": "In bed?",
+        "server": "9f0ef25a.b0945",
+        "version": 3,
+        "outputs": 1,
+        "halt_if": "",
+        "halt_if_type": "num",
+        "halt_if_compare": "is",
+        "entity_id": "sensor.all_in_bed_probability",
+        "state_type": "str",
+        "blockInputOverrides": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "entityState"
+            },
+            {
+                "property": "data",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "entity"
+            }
+        ],
+        "for": "0",
+        "forType": "num",
+        "forUnits": "minutes",
+        "override_topic": false,
+        "state_location": "payload",
+        "override_payload": "msg",
+        "entity_location": "data",
+        "override_data": "msg",
+        "x": 330,
+        "y": 310,
+        "wires": [
+            [
+                "1f8b38071d3a95b9"
+            ]
+        ],
+        "info": "### Purpose:\nThis node retrieves the attributes of the Home Assistant sensor, which shows the probability of the bed in the Primary Bedroom being occupied and makes it available to the switch node that follows.\n### Dependencies:\nThis node cannot operate without the _all_in_bed_probability_ template sensor, which in turn uses a Bayesian sensor created using in-part the smart bed occupancy sensors.\n### Need:\nThis node is optional."
+    },
+    {
+        "id": "ddbd6657a8332c0e",
+        "type": "file in",
+        "z": "5e644e04.a23e78",
+        "name": "Night Heat Settings Retrieval",
+        "filename": "/config/vent-settings/heat_night.json",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 480,
+        "y": 790,
+        "wires": [
+            [
+                "e2f00950bb902177"
+            ]
+        ]
+    },
+    {
+        "id": "e2f00950bb902177",
+        "type": "function",
+        "z": "5e644e04.a23e78",
+        "g": "043cd4d59cbfa311",
+        "name": "Store Night Heat Settings",
+        "func": "// sets the flow-context variable for main vent heat settings\ntry {\n    var settings = JSON.parse(msg.payload);\n    flow.set(\"heat_night\", settings);\n    node.status({fill:\"yellow\",shape:\"dot\",text:\"Night Heating Settings Loaded\"});\n} catch (e) {\n    node.warn(\"error while parsing settings\");\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 780,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "270cb1df0e12c7a7",
+        "type": "change",
+        "z": "5e644e04.a23e78",
+        "name": "Heating Night",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\"action\":\"heat\",\"settings\": \"heat_night\"}",
+                "tot": "json"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 790,
+        "y": 340,
+        "wires": [
+            [
+                "edabdae6b1de4bf7"
+            ]
+        ],
+        "icon": "font-awesome/fa-fire",
+        "info": "### Purpose:\nThis node is used to inject the heating settings into the flow. In this context, for night time heating.\n### Dependencies:\nThis node cannot operate without the settings present as a flow variable, set by the nodes in the Settings assignments group. The heat_night.json is the source of the setting\n### Need:\nThis node is needed to if you need the vents controlled when the HVAC is heating."
+    },
+    {
+        "id": "9f0ef25a.b0945",
+        "type": "server",
+        "name": "Home Assistant",
+        "version": 5,
+        "addon": true,
+        "rejectUnauthorizedCerts": true,
+        "ha_boolean": "y|yes|true|on|home|open",
+        "connectionDelay": true,
+        "cacheJson": true,
+        "heartbeat": false,
+        "heartbeatInterval": 30,
+        "areaSelector": "friendlyName",
+        "deviceSelector": "friendlyName",
+        "entitySelector": "friendlyName",
+        "statusSeparator": "at: ",
+        "statusYear": "hidden",
+        "statusMonth": "short",
+        "statusDay": "numeric",
+        "statusHourCycle": "h23",
+        "statusTimeFormat": "h:m",
+        "enableGlobalContextStore": true
+    }
+]

@@ -1,4 +1,4 @@
-# optimal-keen-vent-control
+# Optimal Keen Vent Control
 
 # Introduction and acknowledgments.
 Home Assistant and Node-RED automation system for Keen vents control. Ecobee thermostat is used.

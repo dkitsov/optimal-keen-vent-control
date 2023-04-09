@@ -31,6 +31,8 @@ The backlash is the issue affecting some larger Keen vents, especially those tha
 All opinions are my own and are not material other than to illustrate my experimentation with Keen vents, Ecobee thermostat, and the Home Assistant. These opinions cannot be considered endorsements, disapproval, or condemnations of any product, service, company, or person.   There are no expressed guarantees of functionality or fitness for any application.
 
 
+https://github.com/dkitsov/optimal-keen-vent-control/wiki
+
 
 
 

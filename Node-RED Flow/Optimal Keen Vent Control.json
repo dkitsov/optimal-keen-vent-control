@@ -55,8 +55,8 @@
             "452c750162405bbf",
             "2ccfb8fd484e9cfd"
         ],
-        "x": 54,
-        "y": 29,
+        "x": 14,
+        "y": 59,
         "w": 882,
         "h": 202,
         "info": "Nodes in this group ar generally to react to the changes to the states of the thermostat and room's temperature offsets and targets."
@@ -153,8 +153,8 @@
         "for": 0,
         "forType": "num",
         "forUnits": "minutes",
-        "x": 390,
-        "y": 130,
+        "x": 350,
+        "y": 160,
         "wires": [
             [
                 "5e89fdddb83e219b"
@@ -182,8 +182,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 625,
-        "y": 190,
+        "x": 585,
+        "y": 220,
         "wires": [
             [
                 "ddc50ea9e9065a33"
@@ -241,8 +241,8 @@
         "outputinitially": true,
         "state_type": "str",
         "enableInput": true,
-        "x": 160,
-        "y": 180,
+        "x": 120,
+        "y": 210,
         "wires": [
             [
                 "85f3c3b5.fdf968"
@@ -281,7 +281,7 @@
         "wires": [
             []
         ],
-        "info": "Calls the services based on the outout of the functoin nodes upstream.\n\nCritical."
+        "info": "### Purpose:\nCalls the services based on the output of the function nodes upstream.\n### Dependencies:\nPretty much everything leading up to this point in the flow.\n### Need:\nCritical.\n"
     },
     {
         "id": "8275f007.b66f1",
@@ -299,7 +299,7 @@
                 "ddbd6657a8332c0e"
             ]
         ],
-        "info": "Trigegrs a reload of a setting from the _/config/vent-settings/_ if the change to a settings file is detected."
+        "info": "### Purpose:\nIf there are changes to the content of, loads the settings from /config/node-settings/\n### Dependencies:\nContent of the directory, namely the JSON settings files.\n### Need:\nHighly desirable, not critical.\n"
     },
     {
         "id": "e8e89921.4c436",
@@ -319,7 +319,8 @@
             [
                 "a59e3092.d68a18"
             ]
-        ]
+        ],
+        "info": "Retrieves the content of JSON settings file from /config/vent-settings/"
     },
     {
         "id": "a59e3092.d68a18",
@@ -540,8 +541,8 @@
         "checkCurrentState": true,
         "blockInputOverrides": false,
         "outputProperties": [],
-        "x": 570,
-        "y": 130,
+        "x": 530,
+        "y": 160,
         "wires": [
             [
                 "ddc50ea9e9065a33"
@@ -587,8 +588,8 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
-        "x": 760,
-        "y": 190,
+        "x": 720,
+        "y": 220,
         "wires": [
             [
                 "b445af83922f23b3"
@@ -643,7 +644,8 @@
                 "9013b4b59fc4a753",
                 "50978bb1afb24e5d"
             ]
-        ]
+        ],
+        "info": "Retrieves the content of JSON settings file from /config/vent-settings/"
     },
     {
         "id": "2557b217.f2ba7e",
@@ -675,7 +677,7 @@
                 "ddbd6657a8332c0e"
             ]
         ],
-        "info": "Trigger an initial load of the vent settings from the files in the _/config/vent-settings/_ directory, when the flow runs."
+        "info": "### Purpose:\nWhen the flow is reloaded, loads the settings from /config/node-settings/\n### Dependencies:\nContent of the directory, namely the JSON settings files.\n### Need:\nCritical\n"
     },
     {
         "id": "6d73d20c4918ca28",
@@ -718,8 +720,8 @@
             "b03b02a39a160d2d",
             "ea24bab0a4700136"
         ],
-        "x": 895,
-        "y": 190,
+        "x": 855,
+        "y": 220,
         "wires": []
     },
     {
@@ -808,8 +810,8 @@
                 "valueType": "triggerId"
             }
         ],
-        "x": 170,
-        "y": 70,
+        "x": 130,
+        "y": 100,
         "wires": [
             [
                 "fd5049e7cb5a34d8"
@@ -835,8 +837,8 @@
         "drop": true,
         "allowrate": false,
         "outputs": 1,
-        "x": 285,
-        "y": 70,
+        "x": 245,
+        "y": 100,
         "wires": [
             [
                 "85f3c3b5.fdf968"
@@ -1037,12 +1039,12 @@
         "rules": [
             {
                 "t": "lte",
-                "v": "60",
+                "v": ".50",
                 "vt": "str"
             },
             {
                 "t": "gt",
-                "v": "60",
+                "v": ".50",
                 "vt": "str"
             }
         ],
@@ -1128,7 +1130,8 @@
             [
                 "e2f00950bb902177"
             ]
-        ]
+        ],
+        "info": "Retrieves the content of JSON settings file from /config/vent-settings/"
     },
     {
         "id": "e2f00950bb902177",
@@ -1249,8 +1252,8 @@
             "452c750162405bbf",
             "ea24bab0a4700136"
         ],
-        "x": 285,
-        "y": 190,
+        "x": 245,
+        "y": 220,
         "wires": []
     },
     {
@@ -1262,8 +1265,8 @@
         "links": [
             "2ccfb8fd484e9cfd"
         ],
-        "x": 565,
-        "y": 190,
+        "x": 525,
+        "y": 220,
         "wires": [
             [
                 "1874d4b0.289beb"
